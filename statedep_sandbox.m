@@ -1,15 +1,17 @@
 %%
 restoredefaultpath;
-addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
 
-cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
-%%
+%cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
+cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+%% load CSC
 cfg = [];
 cfg.decimateByFactor = 30;
 this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
 
-%%
+%% load events
 cfg = [];
 cfg.eventList = {'TTL Input on AcqSystem1_0 board 0 port 2 value (0x000A).'}; 
 cfg.eventLabel = {'laser on'};
@@ -22,33 +24,40 @@ start_stop = LoadEvents(cfg);
 
 laser_on = restrict(laser_on, start_stop.t{1}(4), start_stop.t{2}(4)); % need to automate what is right epoch to get
 
-%%
-cfg = [];
-cfg.getTTnumbers = 0;
+%% inspect stim artifact
+this_stim_binned = zeros(size(this_csc.tvec));
+idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+this_spk_binned(idx) = 1;
+[xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+tvec = tvec ./ Fs;
+
+figure;
+plot(tvec, xc, 'k', 'LineWidth', 2);
+
+
+%% load spikes
+cfg = []; cfg.getTTnumbers = 0;
 S = LoadSpikes(cfg);
 
 %% make psd
 wSize = 1024;
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
 
-figure;
-plot(F, 10*log10(Pxx));
-set(gca, 'XLim', [0 150]);
+%% select a cell
+iC = 3;
+this_S = SelectTS([], S, iC);
 
-%% 
+%% overall PETH
 cfg = [];
 cfg.binsize = 0.0005;
 cfg.max_t = 0.02;
-
-this_S = SelectTS([], S, 2);
 [this_ccf, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1});
 this_ccf = this_ccf ./ length(laser_on.t{1});
 
-figure;
+figure(1);
 subplot(321);
-plot(tvec, this_ccf, 'k', 'LineWidth', 2); title(sprintf('all stim PETH %s', this_S.label{1}));
+plot(tvec, this_ccf, 'k', 'LineWidth', 2); h = title(sprintf('all stim PETH %s', this_S.label{1})); set(h, 'Interpreter', 'none');
 set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
-
 
 %% get some LFP phases 
 fs = 18;
@@ -66,14 +75,15 @@ for iF = 1:length(f_list) % loop across freqs
     stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_f.tvec);
     stim_phase = csc_f.data(stim_phase_idx);
     
-    subplot(322); 
     % STIM PHASE HISTO THIS IS IMPORTANT
-    %hist(stim_phase, 36); title(sprintf('stim phase histo (%d-%d Hz)', f_list{iF}(1), f_list{iF}(2)));
-    plot(F, 10*log10(Pxx));
-    set(gca, 'XLim', [0 150], 'FontSize', 18); grid on;
-
+    figure(2); subplot(2, 2, iF);
+    hist(stim_phase, 36); title(sprintf('stim phase histo (%.1f-%.1f Hz)', f_list{iF}(1), f_list{iF}(2)));
     
-    set(gca, 'FontSize', fs);
+    figure(1)
+    subplot(322); 
+    plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
+    set(gca, 'XLim', [0 150], 'FontSize', fs); grid on;
+    xlabel('Frequency (Hz)');
     
     for iP = 1 % loop across some phase splits
     
@@ -91,7 +101,7 @@ for iF = 1:length(f_list) % loop across freqs
         
         legend(h, {'phase < 0', 'phase >= 0'}, 'Location', 'Northwest'); legend boxoff;
         set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
-        title(sprintf('phase split %d-%d Hz', f_list{iF}(1), f_list{iF}(2)));
+        title(sprintf('phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
     
     end
     
