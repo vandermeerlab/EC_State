@@ -2,9 +2,10 @@
 restoredefaultpath;
 %addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
 addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
 
-%cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
-cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+%cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
 %% load CSC
 cfg = [];
 cfg.decimateByFactor = 30;
@@ -44,22 +45,21 @@ wSize = 1024;
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
 
 %% select a cell
-iC = 3;
+iC = 2;
 this_S = SelectTS([], S, iC);
 
 %% overall PETH
 cfg = [];
 cfg.binsize = 0.0005;
 cfg.max_t = 0.02;
-[this_ccf, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1});
-this_ccf = this_ccf ./ length(laser_on.t{1});
+[this_ccf, tvec] = ccf(cfg, laser_on.t{1}, this_S.t{1});
 
 figure(1);
 subplot(321);
 plot(tvec, this_ccf, 'k', 'LineWidth', 2); h = title(sprintf('all stim PETH %s', this_S.label{1})); set(h, 'Interpreter', 'none');
 set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
 
-%% get some LFP phases 
+%% get some LFP phases (filtfilt)
 fs = 18;
 f_list = {[3 5], [6.5 9.5], [30 40], [60 80]};
 
@@ -68,6 +68,8 @@ for iF = 1:length(f_list) % loop across freqs
     % filter & hilbertize
     cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
     csc_f = FilterLFP(cfg_filt, this_csc);
+    
+    %%% SHUFFLE WOULD DO SOME KIND OF RANDOM CIRCSHIFT HERE %%%
     
     csc_f.data = angle(hilbert(csc_f.data));
     
@@ -90,10 +92,8 @@ for iF = 1:length(f_list) % loop across freqs
         phase_low_idx = find(stim_phase < 0);
         phase_high_idx = find(stim_phase >= 0);
         
-        [this_ccf_low, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1}(phase_low_idx));
-        this_ccf_low = this_ccf_low ./ length(laser_on.t{1}(phase_low_idx));
-        [this_ccf_high, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1}(phase_high_idx));
-        this_ccf_high = this_ccf_high ./ length(laser_on.t{1}(phase_high_idx));
+        [this_ccf_low, tvec] = ccf(cfg, laser_on.t{1}(phase_low_idx), this_S.t{1});
+        [this_ccf_high, tvec] = ccf(cfg, laser_on.t{1}(phase_high_idx), this_S.t{1});
         
         subplot(3, 2, 2 + iF);
         h(1) = plot(tvec, this_ccf_low, 'b', 'LineWidth', 2); hold on;

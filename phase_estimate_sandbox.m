@@ -24,6 +24,7 @@ axis tight; box off;
 end
 
 %% idea: run forward filter up to time of stim to obtain phase estimate
+% why aren't phases uniform for totally random data?
 fs = 18;
 fpass_list = {[3 5], [7 9], [30 40], [65 80]};
 fstop_list = {[2.5 5.5], [6 10], [28 42], [60 85]};
@@ -34,7 +35,7 @@ for iF = 1:length(f_list) % loop across freqs
     cfg_filt = [];
     cfg_filt.fpass = fpass_list{iF};
     cfg_filt.fstop = fstop_list{iF};
-    cfg_filt.debug = 1;
+    cfg_filt.debug = 0;
     
     stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
     
@@ -53,10 +54,8 @@ for iF = 1:length(f_list) % loop across freqs
         phase_low_idx = find(stim_phase < 0);
         phase_high_idx = find(stim_phase >= 0);
         
-        [this_ccf_low, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1}(phase_low_idx));
-        this_ccf_low = this_ccf_low ./ length(laser_on.t{1}(phase_low_idx));
-        [this_ccf_high, tvec] = ccf(cfg, this_S.t{1}, laser_on.t{1}(phase_high_idx));
-        this_ccf_high = this_ccf_high ./ length(laser_on.t{1}(phase_high_idx));
+        [this_ccf_low, tvec] = ccf(cfg, laser_on.t{1}(phase_low_idx), this_S.t{1});
+        [this_ccf_high, tvec] = ccf(cfg, laser_on.t{1}(phase_high_idx), this_S.t{1});
         
         subplot(3, 2, 2 + iF);
         h(1) = plot(tvec, this_ccf_low, 'b', 'LineWidth', 2); hold on;
