@@ -1,11 +1,14 @@
 %%
 restoredefaultpath;
-%addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
-addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
-addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
+addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
+%addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
 
-cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+%cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
 %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
 %% load CSC
 cfg = [];
 cfg.decimateByFactor = 30;
@@ -45,7 +48,7 @@ wSize = 1024;
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
 
 %% select a cell
-iC = 2;
+iC = 3;
 this_S = SelectTS([], S, iC);
 
 %% overall PETH
@@ -62,6 +65,7 @@ set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
 %% get some LFP phases (filtfilt)
 fs = 18;
 f_list = {[3 5], [6.5 9.5], [30 40], [60 80]};
+nShuf = 100;
 
 for iF = 1:length(f_list) % loop across freqs
    
@@ -73,7 +77,17 @@ for iF = 1:length(f_list) % loop across freqs
     
     csc_f.data = angle(hilbert(csc_f.data));
     
-    % get phase for each laser stim
+    for iS = nShuf:-1:1
+        
+        csc_shuf = csc_f;
+        csc_shuf.data = circshift(csc_shuf.data, round(rand(1) .* 0.5*length(csc_shuf.data)));
+        
+        stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_shuf.tvec);
+        stim_phase_shuf(iS, :) = csc_shuf.data(stim_phase_idx);
+        
+    end % of shuffles
+    
+    % get phase for each laser stim (actual)
     stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_f.tvec);
     stim_phase = csc_f.data(stim_phase_idx);
     
@@ -87,22 +101,46 @@ for iF = 1:length(f_list) % loop across freqs
     set(gca, 'XLim', [0 150], 'FontSize', fs); grid on;
     xlabel('Frequency (Hz)');
     
-    for iP = 1 % loop across some phase splits
+    % example phase split
+    phase_low_idx = find(stim_phase < 0);
+    phase_high_idx = find(stim_phase >= 0);
     
-        phase_low_idx = find(stim_phase < 0);
-        phase_high_idx = find(stim_phase >= 0);
-        
-        [this_ccf_low, tvec] = ccf(cfg, laser_on.t{1}(phase_low_idx), this_S.t{1});
-        [this_ccf_high, tvec] = ccf(cfg, laser_on.t{1}(phase_high_idx), this_S.t{1});
-        
-        subplot(3, 2, 2 + iF);
-        h(1) = plot(tvec, this_ccf_low, 'b', 'LineWidth', 2); hold on;
-        h(2) = plot(tvec, this_ccf_high, 'r', 'LineWidth', 2);
-        
-        legend(h, {'phase < 0', 'phase >= 0'}, 'Location', 'Northwest'); legend boxoff;
-        set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
-        title(sprintf('phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
+    [this_ccf_low, tvec] = ccf(cfg, laser_on.t{1}(phase_low_idx), this_S.t{1});
+    [this_ccf_high, ~] = ccf(cfg, laser_on.t{1}(phase_high_idx), this_S.t{1});
     
-    end
+    % same for shuffles
+    for iS = nShuf:-1:1
+        
+        phase_low_idx = find(stim_phase_shuf(iS,:) < 0);
+        phase_high_idx = find(stim_phase_shuf(iS,:) >= 0);
+        
+        [ccf_low_shuf(iS,:), ~] = ccf(cfg, laser_on.t{1}(phase_low_idx), this_S.t{1});
+        [ccf_high_shuf(iS,:), ~] = ccf(cfg, laser_on.t{1}(phase_high_idx), this_S.t{1});
+        
+    end % of shuffles
+    
+    figure(1);
+    subplot(3, 2, 2 + iF);
+    h(1) = plot(tvec, this_ccf_low, 'b', 'LineWidth', 2); hold on;
+    h(2) = plot(tvec, this_ccf_high, 'r', 'LineWidth', 2);
+    
+    plot(tvec, nanmean(ccf_low_shuf), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    plot(tvec, nanmean(ccf_low_shuf) + 1.96*nanstd(ccf_low_shuf), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    plot(tvec, nanmean(ccf_low_shuf) - 1.96*nanstd(ccf_low_shuf), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    
+    legend(h, {'phase < 0', 'phase >= 0'}, 'Location', 'Northwest'); legend boxoff;
+    set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
+    title(sprintf('phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
+        
+    figure(3);
+    subplot(3, 2, 2 + iF);
+    plot(tvec, this_ccf_low - this_ccf_high, 'g', 'LineWidth', 2); hold on;
+ 
+    plot(tvec, nanmean(ccf_low_shuf - ccf_high_shuf), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    plot(tvec, nanmean(ccf_low_shuf - ccf_high_shuf) + 1.96*nanstd(ccf_low_shuf - ccf_high_shuf), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    plot(tvec, nanmean(ccf_low_shuf - ccf_high_shuf) - 1.96*nanstd(ccf_low_shuf - ccf_high_shuf), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    
+    set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
+    title(sprintf('phase split diff %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
     
 end % of freq loop
