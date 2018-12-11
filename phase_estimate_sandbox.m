@@ -23,6 +23,98 @@ axis tight; box off;
 
 end
 
+%% test with some synthetic data
+cfg_filt = []; cfg_filt.order = 4; cfg_filt.f = [6 10]; cfg_filt.pad = 0;
+d = fdesign.bandpass('N,F3dB1,F3dB2', cfg_filt.order, cfg_filt.f(1), cfg_filt.f(2), Fs);
+Hd = design(d,'butter');
+b = Hd.sosMatrix; a = Hd.scaleValues;
+
+% generate some data
+random_csc = this_csc; random_csc.data = randn(size(random_csc.data)); % random
+%random_csc = this_csc; random_csc.data = sin(2*pi*8*random_csc.tvec)'; % pure oscillation
+
+random_csc_f = random_csc; 
+random_csc_f.data = filter(Hd, random_csc_f.data);
+random_csc_f.data = angle(hilbert(random_csc_f.data));
+
+% filter trialized data
+trial_hist = zeros(size(hist(random_csc_f.data, 36)));
+clear first_phases last_phases first_values last_values;
+for iT = length(laser_on.t{1}):-1:1
+    
+    this_trial = restrict(random_csc, laser_on.t{1}(iT)-2.5, laser_on.t{1}(iT));
+    
+    raw_first_values(iT) = this_trial.data(1);
+    raw_last_values(iT) = this_trial.data(end);
+    
+    if cfg_filt.pad % add some padding at start and end
+        
+        x = this_trial.data;
+
+        Np = 500;
+
+        %x1 = -flipud(x(2:Np + 1)) + 2*x(1);
+        %x2 = -flipud(x(end - Np:end-1)) + 2*x(end);
+        x1 = fliplr(diff(x(1:Np)));
+        x1 = cumsum(x1);
+        x1 = x1 + (x(1) - x1(end));
+        
+        x2 = fliplr(diff(x(end - Np + 1:end)));
+        x2 = cumsum(cat(2, x(end), x2));
+        
+        this_trial.data = cat(2, x1(1:end-1), x, x2(2:end));
+        
+    end
+    
+    this_trial.data = filter(Hd, this_trial.data);
+    f_first_values(iT) = this_trial.data(1);
+    f_last_values(iT) = this_trial.data(end);
+    
+    this_trial.data = angle(hilbert(this_trial.data));
+    
+    if cfg_filt.pad
+        this_trial.data = this_trial.data(:, Np + 1:end - Np);
+    end
+    
+    trial_hist = trial_hist + hist(this_trial.data, 36);
+    first_phases(iT) = this_trial.data(1);
+    last_phases(iT) = this_trial.data(end);
+
+end
+
+subplot(221);
+hist(random_csc_f.data, 36);
+title('full data phase hist');
+
+subplot(222);
+bar(trial_hist);
+title('trialized data phase hist');
+
+subplot(223);
+hist(first_phases, 36);
+title('start phase hist');
+
+subplot(224);
+hist(last_phases, 36);
+title('end phase hist');
+
+figure;
+subplot(221);
+hist(raw_first_values, 36);
+title('raw first values');
+
+subplot(222);
+hist(raw_last_values, 36);
+title('raw last values');
+
+subplot(223);
+hist(f_first_values, 36);
+title('filtered first values');
+
+subplot(224);
+hist(f_last_values, 36);
+title('filtered last values');
+
 %% idea: run forward filter up to time of stim to obtain phase estimate
 % why aren't phases uniform for totally random data?
 fs = 18;
@@ -36,6 +128,8 @@ for iF = 1:length(f_list) % loop across freqs
     cfg_filt.fpass = fpass_list{iF};
     cfg_filt.fstop = fstop_list{iF};
     cfg_filt.debug = 0;
+    cfg_filt.filtfilt = 1;
+    cfg_filt.pad = 2000;
     
     stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
     
