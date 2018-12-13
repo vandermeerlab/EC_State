@@ -48,7 +48,7 @@ wSize = 1024;
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
 
 %% select a cell
-iC = 3;
+iC = 2;
 this_S = SelectTS([], S, iC);
 
 %% overall PETH

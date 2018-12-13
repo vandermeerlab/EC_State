@@ -10,6 +10,8 @@ cfg_def.ripple = 2; % passband ripple
 cfg_def.filtfilt = 0;
 cfg_def.debug = 0;
 cfg_def.pad = []; % pad trials before filtering; if non-empty, use this number of points on either end of signal
+cfg_def.order = 4;
+cfg_def.method = 'cicone'; % phase estimation method: 'cicone' or 'hilbert'
 
 cfg = ProcessConfig(cfg_def, cfg_in);
 
@@ -22,7 +24,7 @@ trials = iv(tstart, tend);
 fprintf('Creating filter...\n');
 
 Fs = 1 ./ median(diff(csc_in.tvec));
-%d = fdesign.bandpass(cfg.f(1)-0.5, cfg.f(1)+0.5, cfg.f(2)-0.5, cfg.f(2)+0.5, 30, 2, 30, Fs);
+
 d = fdesign.bandpass(cfg.fstop(1), cfg.fpass(1), cfg.fpass(2), cfg.fstop(2), cfg.att, cfg.ripple, cfg.att, Fs);
 flt = design(d, 'equiripple'); % equiripple method (FIR) gives linear phase delay
 
@@ -62,8 +64,15 @@ for iT = length(tstart):-1:1
             trial_f = filtfilt(flt.Numerator, 1, this_trial.data);
     end
     
-    trial_f = angle(hilbert(trial_f));
-    
+    switch cfg.method
+        case 'hilbert'
+            trial_f = angle(hilbert(trial_f));
+        case 'cicone'
+            [~,~,~,~,trial_f] = InstFreq_v2(trial_f, 1./Fs);
+            trial_f = wrapToPi(trial_f - pi/2); % make consistent with hilbert
+            trial_f = trial_f(1:end-1); % last sample is NaN
+    end
+            
     if cfg.pad
         trial_f = trial_f(:, Np + 1:end - Np);
     end
