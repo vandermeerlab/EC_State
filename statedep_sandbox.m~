@@ -95,7 +95,7 @@ for iC = 1:length(S.label)
     figure(3)
     subplot(322);
     plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
-    set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
+    set(gca, 'XLim', [0 150], 'FontSize', fs); grid on;
     xlabel('Frequency (Hz)');
         title(this_csc.label{1});
 

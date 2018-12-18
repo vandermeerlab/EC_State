@@ -1,4 +1,4 @@
-STATE_initialize
+% STATE_initialize
 % Add the codebase, project secific code, cd to data, and initialize the global variables 
 
 
@@ -15,6 +15,7 @@ if isunix
     PARAMS.stats_dir = '/Volumes/Fenrir/State_dep/Stats/'; % where to put the statistical output .txt
     PARAMS.code_base_dir = '/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'; % where the codebase repo can be found
     PARAMS.code_state_dir = '/Users/jericcarmichael/Documents/GitHub/EC_State'; % where the multisite repo can be found
+    PARAMS.ft_dir = '/Users/jericcarmichael/Documents/GitHub/fieldtrip'; % if needed. 
 else
 %     PARAMS.data_dir = 'G:\Multisite\'; % where to find the raw data
 %     PARAMS.inter_dir = 'G:\Multisite\temp\'; % where to put intermediate files
