@@ -13,7 +13,7 @@ addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\
 %     addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
 addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
     %addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
-    all_fig_dir = 'G:\State_data\all_checks';
+    all_fig_dir = 'G:\State_data\all_checks\';
     
 %     %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
 %     cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
@@ -28,7 +28,7 @@ font_size = 18;
 if isunix
     fname = strsplit(cd, '/');
 else
-    fname = strsplit(cd, '/');
+    fname = strsplit(cd, '\');
 end
 fname = fname{end}; 
 fname = fname(1:strfind(fname,'p')+1);
@@ -227,14 +227,14 @@ for iF = 1:length(f_list) % loop across freqs
                 figure(2)
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
-        set(gcf, 'position', [600 50 560*2 420*2]);
+        set(gcf, 'position', [600 50 640*2 420*2]);
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], all_fig_dir)
         
         figure(3)
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
-        set(gcf, 'position', [600 50 560*2 420*2]);
+        set(gcf, 'position', [600 50 640*2 420*2]);
         saveas_eps([fname '_' S.label{iC}(1:end-2)], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2)], all_fig_dir)
 
