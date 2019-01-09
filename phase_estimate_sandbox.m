@@ -1,3 +1,7 @@
+%% phase_estimate_sandbox.m
+% some code for testing ways of estimating the phase of the last sample in
+% a signal
+
 %% hilbert phase is accurate up to last sample of perfect sine wave
 dt = 0.001;
 tvec = 0:dt:2;
@@ -115,27 +119,26 @@ subplot(224);
 hist(f_last_values, 36);
 title('filtered last values');
 
-%% idea: run forward filter up to time of stim to obtain phase estimate
-% why aren't phases uniform for totally random data?
+%% idea: run forward filter up to time of stim to obtain phase estimate (works on actual data)
 fs = 18;
 fpass_list = {[3 5], [7 9], [30 40], [65 80]};
 fstop_list = {[2.5 5.5], [6 10], [28 42], [60 85]};
 
-for iF = 1:length(f_list) % loop across freqs
+for iF = 1:length(fpass_list) % loop across freqs
    
     % set up filter
     cfg_filt = [];
     cfg_filt.fpass = fpass_list{iF};
     cfg_filt.fstop = fstop_list{iF};
     cfg_filt.debug = 0;
-    cfg_filt.filtfilt = 1;
-    cfg_filt.pad = 2000;
+    cfg_filt.filtfilt = 0;
+    cfg_filt.pad = [];
     
     stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
     
     % STIM PHASE HISTO THIS IS IMPORTANT
     figure(2); subplot(2, 2, iF);
-    hist(stim_phase, 36); title(sprintf('stim phase histo (%.1f-%.1f Hz)', f_list{iF}(1), f_list{iF}(2)));
+    hist(stim_phase, 36); title(sprintf('stim phase histo (%.1f-%.1f Hz)', fpass_list{iF}(1), fpass_list{iF}(2)));
     
     figure(1)
     subplot(322); 
@@ -157,7 +160,7 @@ for iF = 1:length(f_list) % loop across freqs
         
         legend(h, {'phase < 0', 'phase >= 0'}, 'Location', 'Northwest'); legend boxoff;
         set(gca, 'FontSize', fs); xlabel('time (s)'); ylabel('spike count');
-        title(sprintf('phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
+        title(sprintf('phase split %.1f-%.1f Hz', fpass_list{iF}(1), fpass_list{iF}(2)));
     
     end
     

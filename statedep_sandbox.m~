@@ -1,15 +1,24 @@
 %%
 restoredefaultpath;
-addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
-%addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
-addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
-%addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
 
-%cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
-cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
-%cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
-cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
-
+if isunix
+    addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
+    addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
+    
+    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks';
+else
+    addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+    %addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+    addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
+    %addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
+    
+    
+    %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+    cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
+    %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+    cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
+    
+end
 
 %% defaults
 font_size = 18;
@@ -49,7 +58,7 @@ for ii = 1:length(start_stop.t{1})
     rec_times(ii) = start_stop.t{2}(ii)-start_stop.t{1}(ii);
 end
 [duration, main_rec_idx] = max(rec_times);
-disp(['Longest Recording interval is ' num2str(duration/60) 'minutes in recording slot number ' num2str(main_rec_idx)])
+disp(['Longest Recording interval is ' num2str(duration/60) ' minutes in recording slot number ' num2str(main_rec_idx)])
 
 
 laser_on = restrict(laser_on, start_stop.t{1}(main_rec_idx), start_stop.t{2}(main_rec_idx)); 
@@ -76,6 +85,50 @@ S = LoadSpikes(cfg);
 
 %% select a cell
 for iC = 1:length(S.label)
+
+this_S = SelectTS([], S, iC);
+
+%% overall PETH
+cfg = [];
+cfg.binsize = 0.0005;
+cfg.max_t = 0.02;
+[this_ccf, tvec] = ccf(cfg, laser_on.t{1}, this_S.t{1});
+
+figure(1);
+subplot(321);
+plot(tvec, this_ccf, 'k', 'LineWidth', 2); h = title(sprintf('all stim PETH %s', this_S.label{1})); set(h, 'Interpreter', 'none');
+set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('spike count');
+
+%% get some LFP phases (filtfilt)
+f_list = {[3 5], [6.5 9.5],[15 25], [30 40],[40 60], [60 80]};
+nShuf = 100;
+
+for iF = 1:length(f_list) % loop across freqs
+   
+    %% ID plot
+    figure(3)
+    subplot(3,3,1);
+    % h(1) = plot(1:10,nan(1,10), 'color', [1 1 1]);
+    hdr = [];
+    hdr.subject = fname(1:3);
+    hdr.date = fname(5:14);
+    hdr.depth = str2double([fname(strfind(fname, 'p')-1) '.' fname(strfind(fname, 'p')-+1)]); % convert the depth from the title p = . in file names used here
+    if hdr.depth < 2; % if less than 2mm define as cortex
+        hdr.target = 'crtx';
+    elseif hdr.depth > 2 && hdr.depth < 4 % define dorsal striatum
+        hdr.target = 'dStr';
+    elseif hdr.depth > 4 % define as vStr
+        hdr.target = 'vStr';
+    end
+    
+    text(0,0.8, [hdr.subject ' ' strrep(hdr.date, '_', '-') ' '], 'FontSize', font_size);
+    text(0, 0.4, [hdr.target ' depth: ' num2str(hdr.depth) 'mm'], 'FontSize', font_size);
+    text(0, 0.0, ['Cell: ' this_S.label{1}], 'FontSize', font_size)
+    
+    axis off
+    %%  filter & hilbertize
+    cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
+    csc_f = FilterLFP(cfg_filt, this_csc);
     
     this_S = SelectTS([], S, iC);
     fprintf(['Processing Cell #' S.label{iC} '...\n'])
@@ -86,28 +139,19 @@ for iC = 1:length(S.label)
     [this_ccf, tvec] = ccf(cfg, laser_on.t{1}, this_S.t{1});
     
     figure(3);
-    subplot(321);
+    subplot(332);
     plot(tvec, this_ccf, 'k', 'LineWidth', 2); h = title(sprintf('all stim PETH %s', this_S.label{1})); set(h, 'Interpreter', 'none');
     set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('spike count');
     title(strcat('Cell id:    ', this_S.label));
 
     %% look at the psd
     figure(3)
-    subplot(322);
+    subplot(333);
     plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
-    set(gca, 'XLim', [0 150], 'FontSize', fs); grid on;
+    set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
     xlabel('Frequency (Hz)');
         title(this_csc.label{1});
 
-    %% get some LFP phases (filtfilt)
-    f_list = {[3 5], [6.5 9.5], [30 40], [60 80]};
-    nShuf = 100;
-    
-    for iF = 1:length(f_list) % loop across freqs
-        
-        % filter & hilbertize
-        cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
-        csc_f = FilterLFP(cfg_filt, this_csc);
         
         %%% SHUFFLE WOULD DO SOME KIND OF RANDOM CIRCSHIFT HERE %%%
         
@@ -153,7 +197,7 @@ for iC = 1:length(S.label)
         end % of shuffles
         
         figure(1);
-        subplot(3, 2, 2 + iF);
+        subplot(3, 3, 3 + iF);
         h(1) = plot(tvec, this_ccf_low, 'b', 'LineWidth', 2); hold on;
         h(2) = plot(tvec, this_ccf_high, 'r', 'LineWidth', 2);
         
@@ -166,7 +210,7 @@ for iC = 1:length(S.label)
         title(sprintf('phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)));
         
         figure(3);
-        subplot(3, 2, 2 + iF);
+        subplot(3, 3, 3 + iF);
         plot(tvec, this_ccf_low - this_ccf_high, 'g', 'LineWidth', 2); hold on;
         
         plot(tvec, nanmean(ccf_low_shuf - ccf_high_shuf), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
@@ -179,10 +223,18 @@ for iC = 1:length(S.label)
     end % of freq loop
     
         %save the split diff plot as a summary
+                figure(2)
+        cfg_fig.ft_size = font_size; 
+        SetFigure(cfg_fig, gcf)
+        saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], cd)
+        saveas_eps([fname '_' S.label{iC}(1:end-2)], all_fig_dir)
+        
         figure(3)
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
         saveas_eps([fname '_' S.label{iC}(1:end-2)], cd)
+        saveas_eps([fname '_' S.label{iC}(1:end-2)], all_fig_dir)
+
         close all
         fprintf(['Complete Cell #' S.label{iC} '...\n'])
 

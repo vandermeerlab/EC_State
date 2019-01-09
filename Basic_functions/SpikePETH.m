@@ -25,8 +25,9 @@ cfg_def.binsize = cfg_def.dt; % used for gaussian kernal.  select a small bin si
 cfg_def.waves = [];
 cfg_def.contrast_waves = [];
 cfg_def.c_ord = linspecer(4);
-cfg_def.gauss_window = .001; 
+cfg_def.gauss_window = .001;
 cfg_def.gauss_sd = 0.0002;
+cfg_def.plot = 'on'; % turn output 'on' or 'off';
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
 extract_varargin;
@@ -91,65 +92,69 @@ if isempty(outputT)
 end
 %% display
 clf
-
-% spike raster
-subplot(2,1,1);
-% 	imagesc(window,[1 nT], outputID);
-% 	colormap(1-0.25*gray);
-% 	hold on;
-plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);
-xlabel('peri-event (sec)');
-ylabel('Event #');
-ylim([1 nT])
-xlim(cfg.window);
-hold on
-if size(t,2) > 1
-rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-else
-rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-end
-%% add in the wave forms
-if ~isempty(cfg.waves)
-    for ii = 1:4
-        axes('Position', [(.65+(.05*ii)) .8 0.05 .1])
-        plot(cfg.waves.mWV(:,ii), 'color', cfg.c_ord(ii, :))
-        set(gca, 'visible', 'off')
-    end
-end
-
-%%
-% bar graph
-% subplot(3,2,3);
-% m = histc(outputS, outputIT);
-% bar(outputIT,m/cfg.dt/length(t));
-% % 	x = outputIT;
-% % 	m = nanmean(1./outputID);
-% % 	se =  nanstd(1./outputID)/sqrt(nT+1);
-% % 	plot(x,m,'b',x,m+se,'r:',x,m-se,'r:');
-% set(gca, 'XLim', cfg.window);
-% ylabel('FR (Hz)')
-% xlabel('peri-event (sec)');
-
-% mean frequency line
-subplot(2,1,2);
-mean_S_gau = nanmean(outputGau,1);
-% se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
-% plot(outputIT(1:end-1),mean_S_gau, 'b',outputIT(1:end-1),mean_S_gau+se_S_gau, 'b:',outputIT(1:end-1),mean_S_gau-se_S_gau, 'b:' )
-plot(outputIT(1:end-1), mean_S_gau)
-
-idx = nearest_idx3(outputIT(1:end-1), 0);
-idx = nearest_idx3(outputIT(1:end-1), 0);
-
-pre_stim_mean = mean(outputGau(1:idx)); 
-post_stim_mean = mean(outputGau(idx:end)); 
-
-
-if ~(max(mean_S_gau)) ==0
-    ylim([0 max(mean_S_gau)])
+if  strcmp(cfg.plot, 'on')
+    
+    
+    % spike raster
+    subplot(2,1,1);
+    % 	imagesc(window,[1 nT], outputID);
+    % 	colormap(1-0.25*gray);
+    % 	hold on;
+    plot(outputS, outputT+0.5, 'k.', 'MarkerSize', 5);
+    xlabel('peri-event (sec)');
+    ylabel('Event #');
+    ylim([1 nT])
+    xlim(cfg.window);
+    hold on
     if size(t,2) > 1
-        rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
     else
-        rectangle('position', [0 1 0.001  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
     end
+    %% add in the wave forms
+    if ~isempty(cfg.waves)
+        for ii = 1:4
+            axes('Position', [(.65+(.05*ii)) .8 0.05 .1])
+            plot(cfg.waves.mWV(:,ii), 'color', cfg.c_ord(ii, :))
+            set(gca, 'visible', 'off')
+        end
+    end
+    
+    %%
+    % bar graph
+    % subplot(3,2,3);
+    % m = histc(outputS, outputIT);
+    % bar(outputIT,m/cfg.dt/length(t));
+    % % 	x = outputIT;
+    % % 	m = nanmean(1./outputID);
+    % % 	se =  nanstd(1./outputID)/sqrt(nT+1);
+    % % 	plot(x,m,'b',x,m+se,'r:',x,m-se,'r:');
+    % set(gca, 'XLim', cfg.window);
+    % ylabel('FR (Hz)')
+    % xlabel('peri-event (sec)');
+    
+    % mean frequency line
+    subplot(2,1,2);
+    mean_S_gau = nanmean(outputGau,1);
+    % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
+    % plot(outputIT(1:end-1),mean_S_gau, 'b',outputIT(1:end-1),mean_S_gau+se_S_gau, 'b:',outputIT(1:end-1),mean_S_gau-se_S_gau, 'b:' )
+    plot(outputIT(1:end-1), mean_S_gau)
+    
+    idx = nearest_idx3(outputIT(1:end-1), 0);
+    idx = nearest_idx3(outputIT(1:end-1), 0);
+    
+    pre_stim_mean = mean(outputGau(1:idx));
+    post_stim_mean = mean(outputGau(idx:end));
+    
+    
+    if ~(max(mean_S_gau)) ==0
+        ylim([0 max(mean_S_gau)])
+        if size(t,2) > 1
+            rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        else
+            rectangle('position', [0 1 0.001  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        end
+    end
+    
 end
 
