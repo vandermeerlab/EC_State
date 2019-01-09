@@ -173,7 +173,7 @@ for iF = 1:length(f_list) % loop across freqs
         stim_phase = csc_f.data(stim_phase_idx);
         
         % STIM PHASE HISTO THIS IS IMPORTANT
-        figure(2); subplot(2, 2, iF);
+        figure(2); subplot(2, 3, iF);
         hist(stim_phase, 36); title(sprintf('stim phase histo (%.1f-%.1f Hz)', f_list{iF}(1), f_list{iF}(2)));
         
         
