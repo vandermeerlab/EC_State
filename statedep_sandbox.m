@@ -7,16 +7,18 @@ if isunix
     
     all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks';
 else
-    addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%     addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
     %addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
-    addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
+%     addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
+addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
     %addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
+    all_fig_dir = 'G:\State_data\all_checks';
     
-    
-    %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
-    cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
-    %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
-    cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
+%     %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+%     cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
+%     %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+%     cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
     
 end
 
@@ -33,7 +35,7 @@ fname = fname(1:strfind(fname,'p')+1);
 fname = strrep(fname, '-', '_');
 %% load CSC
 cfg = [];
-cfg.decimateByFactor = 30;
+%cfg.decimateByFactor = 30;
 cfg.fc = {'CSC22.ncs'};
 this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
@@ -173,7 +175,7 @@ for iF = 1:length(f_list) % loop across freqs
         stim_phase = csc_f.data(stim_phase_idx);
         
         % STIM PHASE HISTO THIS IS IMPORTANT
-        figure(2); subplot(2, 2, iF);
+        figure(2); subplot(2, 3, iF);
         hist(stim_phase, 36); title(sprintf('stim phase histo (%.1f-%.1f Hz)', f_list{iF}(1), f_list{iF}(2)));
         
         
@@ -225,12 +227,14 @@ for iF = 1:length(f_list) % loop across freqs
                 figure(2)
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
+        set(gcf, 'position', [600 50 560*2 420*2]);
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], all_fig_dir)
         
         figure(3)
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
+        set(gcf, 'position', [600 50 560*2 420*2]);
         saveas_eps([fname '_' S.label{iC}(1:end-2)], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2)], all_fig_dir)
 
