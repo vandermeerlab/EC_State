@@ -1,11 +1,11 @@
-%%
+function statedep_sandbox
 restoredefaultpath;
 
 if isunix
     addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
     addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
     
-    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks';
+    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
 else
 %     addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
 addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
@@ -228,6 +228,8 @@ for iF = 1:length(f_list) % loop across freqs
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
         set(gcf, 'position', [600 50 640*2 420*2]);
+        saveas(gcf, [fname '_' S.label{iC}(1:end-2) '_hist.png']);
+        saveas(gcf, [all_fig_dir fname '_' S.label{iC}(1:end-2) '_hist.png']);
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2) '_hist'], all_fig_dir)
         
@@ -235,6 +237,8 @@ for iF = 1:length(f_list) % loop across freqs
         cfg_fig.ft_size = font_size; 
         SetFigure(cfg_fig, gcf)
         set(gcf, 'position', [600 50 640*2 420*2]);
+        saveas(gcf, [fname '_' S.label{iC}(1:end-2) '.png']);
+        saveas(gcf, [all_fig_dir fname '_' S.label{iC}(1:end-2) '.png']);
         saveas_eps([fname '_' S.label{iC}(1:end-2)], cd)
         saveas_eps([fname '_' S.label{iC}(1:end-2)], all_fig_dir)
 
