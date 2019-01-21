@@ -180,6 +180,11 @@ for iF = 1:length(f_list) % loop across freqs
         
         
         % example phase split
+        % instead use Histc to split the phases by some number of bins.
+        % Then take all the events that occur with thise bin edges and loop
+        % over those bins.  In the loop I will run the CCF on the events
+        % within that phase bin and get a ccf which will make an events x
+        % phase bin array.  This will then become the imagesc. 
         phase_low_idx = find(stim_phase < 0);
         phase_high_idx = find(stim_phase >= 0);
         

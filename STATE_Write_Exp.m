@@ -25,13 +25,13 @@ fname = strrep(fname, '-', '_');
 
 subject_id = fname(1:3);
 date_id = fname(5:14);
-depth = str2double([fname(strfind(fname, 'p')-1) '.' fname(strfind(fname, 'p')-+1)]); % convert the depth from the title p = . in file names used here
+depth = str2double([fname(strfind(fname, 'p')-1) '.' fname(strfind(fname, 'p')+1)]); % convert the depth from the title p = . in file names used here
 
-if depth < 2; % if less than 2mm define as cortex
+if depth <= 2; % if less than 2mm define as cortex
     target = 'crtx';
 elseif depth > 2 && depth < 4 % define dorsal striatum
     target = 'dStr';
-elseif depth > 4 % define as vStr
+elseif depth >= 4 % define as vStr
     target = 'vStr';
 end
 
@@ -69,6 +69,10 @@ elseif strcmp(subject_id, 'M15') % was always on R
 else
     fprintf(fid, 'ExpKeys.hemisphere = ''R'';\n');
 end
+
+fprintf(fid, '\n%%Notes\n');
+fprintf(fid, 'ExpKeys.notes = '''';\n');
+
 
 % laser information
 fprintf(fid, '\n%%Laser information\n');
