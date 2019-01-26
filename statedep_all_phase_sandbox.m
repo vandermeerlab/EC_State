@@ -143,7 +143,7 @@ for iC = 1:length(S.label)
     title(this_csc.label{1},'fontsize', font_size);
     %% get some LFP phases (filtfilt)
     f_list = {[3 5], [6.5 9.5],[15 25], [30 40],[40 60], [60 80]};
-    f_list_label = {'3 - 5', '6.5 - 9.5', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
+    f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
     nShuf = 100;
     sub4_id = 1; % allows for colum looping in Fig 4
     
@@ -219,7 +219,7 @@ for iC = 1:length(S.label)
         % complex version with phase splits
         
         %get some division of phases
-        n_phases = 8;
+        n_phases = 5;
         fprintf('\nPhase split into %1d bins\n', n_phases)
         [~, edges, ~] = histcounts(-pi:pi, n_phases, 'BinLimits', [-pi, pi]);
         
@@ -419,7 +419,7 @@ for iC = 1:length(S.label)
     close all
     
     %% save the ccf info
-    save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
+%     save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
     
     
     
