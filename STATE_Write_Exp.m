@@ -113,8 +113,11 @@ fprintf(fid, 'ExpKeys.timeOnWheel = %.4d;\n',Evt.t{1}(main_rec_idx));
 fprintf(fid, 'ExpKeys.timeOffWheel = %.4d;\n',Evt.t{2}(main_rec_idx) );
 
 fprintf(fid, 'ExpKeys.PreRecord = [%.4d %.4d];\n',Evt.t{1}(1),Evt.t{2}(1));
+if length(Evt.t{2}) > main_rec_idx
 fprintf(fid, 'ExpKeys.PostRecord = [%.4d %.4d];\n',Evt.t{1}(main_rec_idx+1),Evt.t{2}(main_rec_idx+1));
-
+else
+    fprintf(fid, 'ExpKeys.PostRecord = NAN;\n');
+end
 fprintf(fid, 'ExpKeys.Hundred_Stims = [%.4d %.4d];\n',Evt.t{1}(2),Evt.t{2}(2));
 
 

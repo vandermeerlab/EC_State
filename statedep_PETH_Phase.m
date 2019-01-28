@@ -25,6 +25,23 @@ else
     
 end
 
+good_sess_list = {'M13_2018_12_09_TT1_05_OK',...
+    'M13_2018_12_09_TT6_01_OK',...
+    'M13_2018_12_09_TT8_01_OK',...
+    'M13_2018_12_11_TT7_01_OK',...
+    'M13_2018_12_11_TT7_02_OK',...
+    'M13_2018_12_16_TT3_02_OK',...
+    'M13_2018_12_17_TT2_02_Good',...
+    'M14_2018_12_01_TT3_02_OK',...
+    'M14_2018_12_08_TT1_04_Good',...
+    'M14_2018_12_09_TT8_02_OK',...
+    'M14_2018_12_10_TT1_02_Good',...
+    'M14_2018_12_10_TT2_01_Good',...
+    'M14_2018_12_10_TT2_02_Good',...
+    'M14_2018_12_15_TT1_03_OK',...
+    'M14_2018_12_17_TT2_01_OK'};
+
+
 mkdir(all_fig_dir);
 %% defaults
 font_size = 18;
@@ -66,7 +83,7 @@ end
 %% load spikes
 cfg = []; cfg.getTTnumbers = 0;
 if isfield(ExpKeys, 'goodCell')
-    cfg.fc = {ExpKeys.goodCell};
+    cfg.fc = ExpKeys.goodCell;
 end
 S = LoadSpikes(cfg);
 
@@ -78,7 +95,7 @@ for iC = 1:length(S.label)
     cell_id = this_S.label{1}(1:end-2);
     cell_id = strrep(cell_id, '_SS', '');
     
-    if strcmpi(this_S.label{1}(end-4:end-2), 'Art') % don't bother processing artifacts
+    if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], good_sess_list) % don't bother processing artifacts
         continue
     end
     %% get some LFP phases (filtfilt)
@@ -143,6 +160,7 @@ for iC = 1:length(S.label)
 
             end
             xlim([-1 10])
+            ylim([1 length(laser_on.t{1})])
             set(gca, 'xtick',  -1:1:10)
             xlabel('time (s)')
             ylabel('stim #')
@@ -150,4 +168,8 @@ for iC = 1:length(S.label)
         rectangle('position', [0, 0, 1, length(laser_on.t{1})], 'facecolor',[([4,172,218]./255) 0.5], 'edgecolor',[([4,172,218]./255) 0.5] )
     end
     SetFigure([], gcf)
+    text(0.35, 0.98,[ExpKeys.subject '_' ExpKeys.date '  Cell ' cell_id], 'fontsize', font_size)
+    saveas(gcf, [all_fig_dir ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_peth.png']);
+    saveas_eps([ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_peth'], all_fig_dir)
+close all
 end

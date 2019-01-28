@@ -46,9 +46,20 @@ this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
 
 %% make psd
-wSize = 1024;
-[Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
+if Fs >=30000
+    wSize =  16384;
+else
+    wSize = 1024;
+end
 
+[Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
+    %% look at the psd
+    figure(3)
+    subplot(333);
+    plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
+    set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
+    xlabel('Frequency (Hz)');
+    title(this_csc.label{1},'fontsize', font_size);
 %% load events
 cfg = [];
 cfg.eventList = {'TTL Input on AcqSystem1_0 board 0 port 2 value (0x000A).'};
@@ -134,13 +145,7 @@ for iC = 1:length(S.label)
     set(h, 'Interpreter', 'none');
     set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('spike count');
     
-    %% look at the psd
-    figure(3)
-    subplot(333);
-    plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
-    set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
-    xlabel('Frequency (Hz)');
-    title(this_csc.label{1},'fontsize', font_size);
+
     %% get some LFP phases (filtfilt)
     f_list = {[3 5], [6.5 9.5],[15 25], [30 40],[40 60], [60 80]};
     f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
@@ -365,19 +370,19 @@ for iC = 1:length(S.label)
     SetFigure(cfg_fig, gcf)
     tightfig
     set(gcf, 'position', [235 158  1121 528]);
-    %     saveas(gcf, [fname '_' cell_id(1:end-2) '_hist.png']);
-    saveas(gcf, [all_fig_dir fname '_' cell_id(1:end-2) '_hist.png']);
-    %     saveas_eps([fname '_' cell_id(1:end-2) '_hist'], cd)
-    saveas_eps([fname '_' cell_id(1:end-2) '_hist'], all_fig_dir)
+    %     saveas(gcf, [fname '_' cell_id '_hist.png']);
+    saveas(gcf, [all_fig_dir fname '_' cell_id '_hist.png']);
+    %     saveas_eps([fname '_' cell_id '_hist'], cd)
+    saveas_eps([fname '_' cell_id '_hist'], all_fig_dir)
     
     figure(3)
     cfg_fig.ft_size = font_size;
     SetFigure(cfg_fig, gcf)
     set(gcf, 'position', [600 50 640*2 420*2]);
-    %     saveas(gcf, [fname '_' cell_id(1:end-2) '_ccf.png']);
-    saveas(gcf, [all_fig_dir fname '_' cell_id(1:end-2) '_ccf.png']);
-    %     saveas_eps([fname '_' cell_id(1:end-2) '_ccf'], cd)
-    saveas_eps([fname '_' cell_id(1:end-2) '_ccf'], all_fig_dir)
+    %     saveas(gcf, [fname '_' cell_id '_ccf.png']);
+    saveas(gcf, [all_fig_dir fname '_' cell_id '_ccf.png']);
+    %     saveas_eps([fname '_' cell_id '_ccf'], cd)
+    saveas_eps([fname '_' cell_id '_ccf'], all_fig_dir)
     
     figure(4)
     tightfig
@@ -386,10 +391,10 @@ for iC = 1:length(S.label)
     ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
     text(0.25, 0.98,[fname '  Cell ' cell_id], 'fontsize', font_size)
     set(gcf, 'position', [600 50 640*2 420*2]);
-    %     saveas(gcf, [fname '_' cell_id(1:end-2) '_both.png']);
-    saveas(gcf, [all_fig_dir fname '_' cell_id(1:end-2) '_both.png']);
-    %     saveas_eps([fname '_' cell_id(1:end-2) '_both'], cd)
-    saveas_eps([fname '_' cell_id(1:end-2) '_both'], all_fig_dir)
+    %     saveas(gcf, [fname '_' cell_id '_both.png']);
+    saveas(gcf, [all_fig_dir fname '_' cell_id '_both.png']);
+    %     saveas_eps([fname '_' cell_id '_both'], cd)
+    saveas_eps([fname '_' cell_id '_both'], all_fig_dir)
     
     
     % stack of raw imagescs
@@ -398,10 +403,10 @@ for iC = 1:length(S.label)
     text(0.35, 0.98,[fname '  Cell ' cell_id], 'fontsize', font_size)
     SetFigure([], gcf)
     set(gcf, 'position', [100    38   1340   751]);
-    %     saveas(gcf, [fname '_' cell_id(1:end-2) '_stack.png']);
-    saveas(gcf, [all_fig_dir fname '_' cell_id(1:end-2) '_stack.png']);
-    %     saveas_eps([fname '_' cell_id(1:end-2) '_stack'], cd)
-    saveas_eps([fname '_' cell_id(1:end-2) '_stack'], all_fig_dir)
+    %     saveas(gcf, [fname '_' cell_id '_stack.png']);
+    saveas(gcf, [all_fig_dir fname '_' cell_id '_stack.png']);
+    %     saveas_eps([fname '_' cell_id '_stack'], cd)
+    saveas_eps([fname '_' cell_id '_stack'], all_fig_dir)
     
     %only imagesc for ccf exceeding shuffle 1.96
     figure(6)
@@ -410,10 +415,10 @@ for iC = 1:length(S.label)
     cfg_fig.ft_size = font_size;
     SetFigure(cfg_fig, gcf)
     set(gcf, 'position', [600 50 640*2 420*2]);
-    %     saveas(gcf, [fname '_' cell_id(1:end-2) '_all_phase.png']);
-    saveas(gcf, [all_fig_dir fname '_' cell_id(1:end-2) '_all_phase.png']);
-    %     saveas_eps([fname '_' cell_id(1:end-2) '_all_phase'], cd)
-    saveas_eps([fname '_' cell_id(1:end-2) '_all_phase'], all_fig_dir)
+    %     saveas(gcf, [fname '_' cell_id '_all_phase.png']);
+    saveas(gcf, [all_fig_dir fname '_' cell_id '_all_phase.png']);
+    %     saveas_eps([fname '_' cell_id '_all_phase'], cd)
+    saveas_eps([fname '_' cell_id '_all_phase'], all_fig_dir)
     
     
     close all

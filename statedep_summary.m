@@ -26,19 +26,21 @@ end
 mkdir(all_lat_dir); mkdir(all_fig_dir);
 % list of manually approved cells
 good_sess_list = {'M13_2018_12_09_TT1_05_OK',...
-    'M13_2018_12_09_TT6_06_OK',...
+    'M13_2018_12_09_TT6_01_OK',...
     'M13_2018_12_09_TT8_01_OK',...
     'M13_2018_12_11_TT7_01_OK',...
     'M13_2018_12_11_TT7_02_OK',...
     'M13_2018_12_16_TT3_02_OK',...
     'M13_2018_12_17_TT2_02_Good',...
+    'M14_2018_12_01_TT3_02_OK',...
     'M14_2018_12_08_TT1_04_Good',...
     'M14_2018_12_09_TT8_02_OK',...
-    'M14_2018_12_10_TT1_02_Good',...
-    'M14_2018_12_10_TT2_01_Good',...
-    'M14_2018_12_10_TT2_02_Good',...
     'M14_2018_12_15_TT1_03_OK',...
     'M14_2018_12_17_TT2_01_OK'};
+%     'M14_2018_12_10_TT1_02_Good',...
+%     'M14_2018_12_10_TT2_01_Good',...
+%     'M14_2018_12_10_TT2_02_Good',...
+
 
 font_size = 18;
 %% generate a latency and count summary
@@ -99,8 +101,14 @@ for iC = 1:length(cell_list)
                 
                 % get all the reponses
                 % maybe shuffles?
-%                 all_count_shuf(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).	(2,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+                all_lat_shuf_mean(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+                all_lat_shuf_std(iC, iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
 
+                if all_lat(iC, iPhase,iF) > all_lat_shuf_mean(iC,iPhase,iF)+ 1.96*(all_lat_shuf_std(iC,iPhase,iF)) || all_lat(iC, iPhase,iF) < all_lat_shuf_mean(iC,iPhase,iF)- 1.96*(all_lat_shuf_std(iC,iPhase,iF))
+                all_lat_v_shuf(iC,iPhase,iF) = all_lat(iC, iPhase, iF);
+                else
+                    all_lat_v_shuf(iC, iPhase, iF) = NaN; 
+                end
             end
             z_lat(iC, :,iF) = zscore(all_lat(iC, :,iF));
 
@@ -133,9 +141,33 @@ set(gcf, 'position', [282   50  1200  720])
 ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 text(0.35, 0.98,['Latency to first spike across cells'], 'fontsize', font_size)
 
-% saveas(gcf, [summary_dir 'Summary_latency_raw.png']);
-% saveas_eps('Summary_latency_raw.png', summary_dir)
+saveas(gcf, [summary_dir 'Summary_latency_raw.png']);
+saveas_eps('Summary_latency_raw', summary_dir)
+%%
+figure(1)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        
+        imagesc(all_lat_v_shuf(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        colorbar
+        
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Latency to first spike across cells (above 2d of shuf)'], 'fontsize', font_size)
 
+saveas(gcf, [summary_dir 'Summary_latency_zshuf.png']);
+saveas_eps('Summary_latency_z_shuf', summary_dir)
 %%
 % same but for zscore
 figure(2)
@@ -159,8 +191,35 @@ SetFigure([], gcf)
 set(gcf, 'position', [282   50  1200  720])
 ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 text(0.35, 0.98,['Zscore first spike latency across cells'], 'fontsize', font_size)
-% saveas(gcf, [summary_dir 'Summary_count.png']);
-% saveas_eps('Summary_count.png', summary_dir)
+saveas(gcf, [summary_dir 'Summary_zscore.png']);
+saveas_eps('Summary_zscore', summary_dir)
+
+%% count version
+
+% same but for zscore
+figure(4)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_count(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['nSpikes per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_count.png']);
+saveas_eps('Summary_count', summary_dir)
 
 
 %% make a response plot
@@ -198,4 +257,5 @@ scatter(resp_all_1d, resp_ratio_1d,100, 'filled')
 xlabel('p(spike|stim)')
 ylabel('ratio of max phase / min phase response')
 SetFigure([], gcf)
-
+saveas(gcf, [summary_dir 'Summary_resp.png']);
+saveas_eps('Summary_resp', summary_dir)

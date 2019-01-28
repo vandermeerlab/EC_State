@@ -25,6 +25,22 @@ else
     
 end
 
+good_sess_list = {'M13_2018_12_09_TT1_05_OK',...
+    'M13_2018_12_09_TT6_01_OK',...
+    'M13_2018_12_09_TT8_01_OK',...
+    'M13_2018_12_11_TT7_01_OK',...
+    'M13_2018_12_11_TT7_02_OK',...
+    'M13_2018_12_16_TT3_02_OK',...
+    'M13_2018_12_17_TT2_02_Good',...
+    'M14_2018_12_01_TT3_02_OK',...
+    'M14_2018_12_08_TT1_04_Good',...
+    'M14_2018_12_09_TT8_02_OK',...
+    'M14_2018_12_10_TT1_02_Good',...
+    'M14_2018_12_10_TT2_01_Good',...
+    'M14_2018_12_10_TT2_02_Good',...
+    'M14_2018_12_15_TT1_03_OK',...
+    'M14_2018_12_17_TT2_01_OK'};
+
 mkdir(all_lat_dir); mkdir(all_fig_dir);
 %% defaults
 font_size = 18;
@@ -75,7 +91,7 @@ for iC = 1:length(S.label)
     cell_id = this_S.label{1}(1:end-2);
     cell_id = strrep(cell_id, '_SS', '');
     
-    if strcmpi(this_S.label{1}(end-4:end-2), 'Art') % don't bother processing artifacts
+    if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], good_sess_list) % don't bother processing artifacts
         continue
     end
     %% get some LFP phases (filtfilt)
@@ -132,7 +148,8 @@ for iC = 1:length(S.label)
         end
         
         % get the latencies
-        for iEvt = 1:length(laser_on.t{1})
+        [~, cell_idx] = ismember(this_S.label, ExpKeys.goodCell);
+        for iEvt = ExpKeys.goodTrials(cell_idx,1):1:ExpKeys.goodTrials(cell_idx,2)
             
             if this_S.t{1}(nearest_idx3(laser_on.t{1}(iEvt), this_S.t{1}, 1)) > laser_on.t{1}(iEvt)
                 all_lat(2, iEvt) = this_S.t{1}(nearest_idx3(laser_on.t{1}(iEvt), this_S.t{1}, 1)) - laser_on.t{1}(iEvt);
@@ -151,7 +168,7 @@ for iC = 1:length(S.label)
         
         n_drops = zeros(n_phases, length(all_lat));
         
-        for iEvt = 1:length(laser_on.t{1})
+        for iEvt = ExpKeys.goodTrials(cell_idx,1):1 :ExpKeys.goodTrials(cell_idx,2)
             if isnan(all_lat(2,iEvt))
                 continue
             else
@@ -177,7 +194,7 @@ for iC = 1:length(S.label)
         xbin_centers_ms = xbin_centers*1000;
         
         % get the response 1 or nan
-        for iEvt = 1:length(laser_on.t{1})
+        for iEvt = ExpKeys.goodTrials(cell_idx,1): ExpKeys.goodTrials(cell_idx,2)
             if ~isnan(all_count(2, iEvt)) && all_count(2,iEvt) >=1
                 all_resp(2,iEvt) = 1;
             else
