@@ -85,7 +85,7 @@ for iC = 1:length(cell_list)
         if strcmp(f_list{iF}, 'hdr')
             continue
         else
-                    x_phase_resp(iC,iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,:));
+                x_phase_resp(iC, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,:));
 
             for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:)) % get the phase segment numbers (should be 1:5 if phase split by 5
                % labels for x axes
@@ -100,17 +100,32 @@ for iC = 1:length(cell_list)
                 all_resp(iC,iPhase,iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
                 
                 % get all the reponses
+
                 % maybe shuffles?
                 all_lat_shuf_mean(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
                 all_lat_shuf_std(iC, iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
 
+                all_resp_shuf_mean(iC,iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+                all_resp_shuf_std(iC,iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+
+                
                 if all_lat(iC, iPhase,iF) > all_lat_shuf_mean(iC,iPhase,iF)+ 1.96*(all_lat_shuf_std(iC,iPhase,iF)) || all_lat(iC, iPhase,iF) < all_lat_shuf_mean(iC,iPhase,iF)- 1.96*(all_lat_shuf_std(iC,iPhase,iF))
-                all_lat_v_shuf(iC,iPhase,iF) = all_lat(iC, iPhase, iF);
+                    all_lat_v_shuf(iC,iPhase,iF) = all_lat(iC, iPhase, iF);
                 else
                     all_lat_v_shuf(iC, iPhase, iF) = NaN; 
                 end
+                
+                %exceeds 2sd of shuffle for response
+%                  if all_resp(iC, iPhase,iF) > all_resp_shuf_mean(iC,iPhase,iF)+ 1.96*(all_resp_shuf_std(iC,iPhase,iF)) || all_resp(iC, iPhase,iF) < all_resp_shuf_mean(iC,iPhase,iF)- 1.96*(all_resp_shuf_std(iC,iPhase,iF))
+                     all_resp_v_shuf(iC,iPhase,iF) = (all_resp(iC,iPhase,iF) - all_resp_shuf_mean(iC,iPhase,iF))/all_resp_shuf_std(iC,iPhase,iF);
+%                 else
+%                     all_resp_v_shuf(iC, iPhase, iF) = NaN; 
+%                 end
+                
             end
             z_lat(iC, :,iF) = zscore(all_lat(iC, :,iF));
+            z_resp(iC, :,iF) = zscore(all_resp(iC, :,iF));
+            all_resp_v_all(iC,:,iF) = all_resp(iC,:,iF)./x_phase_resp(iC,iF);
 
             
         end
@@ -144,7 +159,7 @@ text(0.35, 0.98,['Latency to first spike across cells'], 'fontsize', font_size)
 saveas(gcf, [summary_dir 'Summary_latency_raw.png']);
 saveas_eps('Summary_latency_raw', summary_dir)
 %%
-figure(1)
+figure(2)
 for iF = 1:length(f_list)
     if strcmp(f_list{iF}, 'hdr')
         continue
@@ -170,7 +185,7 @@ saveas(gcf, [summary_dir 'Summary_latency_zshuf.png']);
 saveas_eps('Summary_latency_z_shuf', summary_dir)
 %%
 % same but for zscore
-figure(2)
+figure(3)
 for iF = 1:length(f_list)
     if strcmp(f_list{iF}, 'hdr')
         continue
@@ -196,8 +211,7 @@ saveas_eps('Summary_zscore', summary_dir)
 
 %% count version
 
-% same but for zscore
-figure(4)
+figure(3)
 for iF = 1:length(f_list)
     if strcmp(f_list{iF}, 'hdr')
         continue
@@ -222,6 +236,107 @@ saveas(gcf, [summary_dir 'Summary_count.png']);
 saveas_eps('Summary_count', summary_dir)
 
 
+%% response version
+figure(5)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp.png']);
+saveas_eps('Summary_resp', summary_dir)
+
+% zscore
+figure(6)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(z_resp(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Zscore response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_z.png']);
+saveas_eps('Summary_resp_z', summary_dir)
+
+% relative to all
+% zscore
+figure(7)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_v_all(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Relative response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_v_all.png']);
+saveas_eps('Summary_resp_v_all', summary_dir)
+
+% relative to shuffle
+% zscore
+figure(8)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_v_shuf(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Zscore v Shuf per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_v_shuf.png']);
+saveas_eps('Summary_resp_v_shuf', summary_dir)
 %% make a response plot
 
 
@@ -230,7 +345,7 @@ saveas_eps('Summary_count', summary_dir)
 
 % x_phase_resp should be the same across f_list since it is the number of
 % responses and doesn't care about phase or freq. 
-
+figure(9)
 for iC =1:size(all_resp,1)
     for iF = 1:size(all_resp,3)
 % get max phase
@@ -251,11 +366,10 @@ resp_all_1d = reshape(x_phase_resp, 1, numel(x_phase_resp));
 
 
 % generate figure
-figure(3)
 % subplot(2,1,1)
 scatter(resp_all_1d, resp_ratio_1d,100, 'filled')
 xlabel('p(spike|stim)')
 ylabel('ratio of max phase / min phase response')
 SetFigure([], gcf)
-saveas(gcf, [summary_dir 'Summary_resp.png']);
-saveas_eps('Summary_resp', summary_dir)
+saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
+saveas_eps('Summary_resp_ratio', summary_dir)

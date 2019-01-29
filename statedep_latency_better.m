@@ -206,20 +206,20 @@ for iC = 1:length(S.label)
         for iS = nShuf:-1:1
             mix = randperm(length(all_lat(2,:)));
             all_lat_shuf(1,:,iS) = all_lat(1,mix);
-%             all_count_shuf(1,:,iS) = all_lat(1,mix);
-%             all_resp_shuf(1,:,iS) = all_lat(1,mix);
+            all_count_shuf(1,:,iS) = all_lat(1,mix);
+            all_resp_shuf(1,:,iS) = all_lat(1,mix);
             
             all_lat_shuf(2,:,iS) = all_lat(2,mix);
-%             all_count_shuf(2,:,iS)  = all_count(2,mix);
-%             all_resp_shuf(2,:,iS) = all_resp(2,mix);
+            all_count_shuf(2,:,iS)  = all_count(2,mix);
+            all_resp_shuf(2,:,iS) = all_resp(2,mix);
             
         end
          % average over shuffles to get a temporary shuffle array
             for iEvt = 1:length(laser_on.t{1})
                 temp_lat_shuf(iEvt) = nanmean(all_lat_shuf(2,iEvt,:));
-%                 temp_count_shuf(iEvt) = nanmean(all_count_shuf(2,iEvt,:));
+                temp_count_shuf(iEvt) = nanmean(all_count_shuf(2,iEvt,:));
                 
-%                 temp_resp_shuf(iEvt) = nanmean(all_resp_shuf(2,iEvt,:));
+                all_resp_shuf_mean(iEvt) = nanmean(all_resp_shuf(2,iEvt,:));
             end
          
          % get the means for each phase bin
@@ -333,6 +333,8 @@ for iC = 1:length(S.label)
         out.(cell_id).(freq_label).latency_shuf = temp_lat_shuf;
         out.(cell_id).(freq_label).count = all_count;
         out.(cell_id).(freq_label).resp = all_resp;
+        out.(cell_id).(freq_label).resp_shuf = all_resp_shuf_mean;
+
 close all
     end % end freq loop
     
