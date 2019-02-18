@@ -94,6 +94,8 @@ for iC = 1:length(S.label)
     if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], good_sess_list) % don't bother processing artifacts
         continue
     end
+    
+    
     %% get some LFP phases (filtfilt)
     f_list = {[3 5], [7 10],[15 25], [30 40],[40 60], [60 80]};
     f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
@@ -337,7 +339,8 @@ for iC = 1:length(S.label)
 
 close all
     end % end freq loop
-    
+        % put the cell info in here for later
+    out.(cell_id).ExpKeys = ExpKeys;
 end % end cell loop
 if exist('out', 'var')
 save([ all_lat_dir  ExpKeys.subject '_' ExpKeys.date '_lat.mat'], 'out', '-v7.3')

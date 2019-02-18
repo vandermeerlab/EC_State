@@ -137,12 +137,9 @@ end
 
 %% make a table of responsive cells, where they are, subject ID, ....
 Sub_list = {'M13', 'M14'}; 
-summary_table = cell(6,length(Sub_list)+1);
-summary_table{2,1} = 'n Resp Cells';
-for iSub = 1:length(Sub_list)
-    summary_table{1, iSub+1} = Sub_list{iSub};
-
-end
+summary_table = NaN(6,length(Sub_list));
+for iSub = 1:length(
+summary_table(1, Sub
 for iC = 1:length(cell_list)
     this_cell = cell_list{iC};
     f_list = fieldnames(all_cells.(this_cell));
