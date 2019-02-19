@@ -41,8 +41,8 @@ for iSess =1:length(sess_list);
             
             
             % actually run the
-%             statedep_all_phase_sandbox; close all
-%             statedep_latency_better; close all
+            statedep_all_phase_sandbox; close all
+            statedep_latency_better; close all
             statedep_PETH_Phase
             close all
             cd(main_dir)

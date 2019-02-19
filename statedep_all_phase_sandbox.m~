@@ -60,12 +60,9 @@ end
     set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
     xlabel('Frequency (Hz)');
     title(this_csc.label{1},'fontsize', font_size);
-    
-    %% load expkeys
-    LoadExpKeys
 %% load events
 cfg = [];
-cfg.eventList = {ExpKeys.laser_on};
+cfg.eventList = {E};
 cfg.eventLabel = {'laser on'};
 laser_on = LoadEvents(cfg);
 
