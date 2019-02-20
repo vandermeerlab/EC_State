@@ -90,8 +90,8 @@ fprintf(fid, 'ExpKeys.fibre_NA = %.2f ;%% \n', 0.39);
 fprintf(fid, '\n%%NLX digital I/O codes\n');
 
 if strcmp(subject_id, 'M16') || strcmp(subject_id, 'M17'); % different ids for variabel stim ISI version
-fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0004).''; %% when the 1ms laser came on \n');
-fprintf(fid, 'ExpKeys.var_trig = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0002).''; %% when the 1ms laser came on \n');
+fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0002).''; %% when the 1ms laser came on \n');
+fprintf(fid, 'ExpKeys.var_trig = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0004).''; %% when the 1ms laser came on \n');
 fprintf(fid, 'ExpKeys.wide_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0010).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
 fprintf(fid, 'ExpKeys.stim_mode = ''variable ISI''; %% if fixed then just used ISI, if variable then ISI is between 0-1500ms \n');
 fprintf(fid, 'ExpKeys.ISI = %.2f ;%% \n', 2);
