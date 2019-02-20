@@ -40,6 +40,16 @@ cfg.fc = {'CSC22.ncs'};
 this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
 
+if this_csc.cfg.hdr{1}.SamplingFrequency > 2000
+    cfg = [];
+cfg.decimateByFactor = this_csc.cfg.hdr{1}.SamplingFrequency/2000;
+cfg.fc = {'CSC22.ncs'};
+    clear this_csc
+
+this_csc = LoadCSC(cfg);
+Fs = 1 ./ median(diff(this_csc.tvec));
+end
+
 %% make psd
 wSize = 1024;
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
@@ -71,14 +81,14 @@ if length(laser_on.t{1}) ~= 1000 && length(laser_on.t{1}) ~= 600
     
 end
 %% inspect stim artifact
-this_stim_binned = zeros(size(this_csc.tvec));
-idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
-this_spk_binned(idx) = 1;
-[xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
-tvec = tvec ./ Fs;
-
+% this_stim_binned = zeros(size(this_csc.tvec));
+% idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+% this_spk_binned(idx) = 1;
+% [xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+% tvec = tvec ./ Fs;
+% 
 figure;
-plot(tvec, xc, 'k', 'LineWidth', 2);
+% plot(tvec, xc, 'k', 'LineWidth', 2);
 
 
 %% load spikes
