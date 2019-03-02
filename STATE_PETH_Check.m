@@ -85,15 +85,15 @@ for iC = 1:length(S.label)
         rectangle('position', [0, 0, 1, length(laser_on.t{1})], 'facecolor',[([4,172,218]./255) 0.5], 'edgecolor',[([4,172,218]./255) 0.5] )
 
 %% add the waveform
- wave = csvread([S.label{iC}(1:4) 'AvgWaveforms.csv']);
- if size(wave,1) >iC*4
- this_wave = wave((iC*4)-2:(iC*4)+1,:);
- 
- plot(9+wave(1,:), (this_wave(1,:)')*2500+length(laser_on.t{1})*.5)
- plot(9+wave(1,:), (this_wave(2,:)')*2500+length(laser_on.t{1})*.3)
- plot(7.5+wave(1,:), (this_wave(3,:)')*2500+length(laser_on.t{1})*.5)
- plot(7.5+wave(1,:), (this_wave(4,:)')*2500+length(laser_on.t{1})*.3)
- end
+% wave = csvread([S.label{iC}(1:4) 'AvgWaveforms.csv']);
+% if size(wave,1) >iC*4
+% this_wave = wave((iC*4)-2:(iC*4)+1,:);
+% 
+% plot(9+wave(1,:), (this_wave(1,:)')*2500+length(laser_on.t{1})*.5)
+% plot(9+wave(1,:), (this_wave(2,:)')*2500+length(laser_on.t{1})*.3)
+% plot(7.5+wave(1,:), (this_wave(3,:)')*2500+length(laser_on.t{1})*.5)
+% plot(7.5+wave(1,:), (this_wave(4,:)')*2500+length(laser_on.t{1})*.3)
+% end
 end
 %%
 %% load running data
