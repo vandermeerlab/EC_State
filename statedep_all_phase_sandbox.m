@@ -89,15 +89,20 @@ if length(laser_on.t{1}) ~= 1000 && length(laser_on.t{1}) ~= 600
     warning('Wrong number of laser pulses. %0.2f when it should be 1000 or in early sessions 600',length(laser_on.t{1}))
     
 end
-%% inspect stim artifact
-this_stim_binned = zeros(size(this_csc.tvec));
-idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
-this_spk_binned(idx) = 1;
-[xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
-tvec = tvec ./ Fs;
 
-figure;
-plot(tvec, xc, 'k', 'LineWidth', 2);
+%% restric the CSC to the run portion
+this_csc = restrict(this_csc, start_stop.t{1}(main_rec_idx), start_stop.t{2}(main_rec_idx));
+
+
+% %% inspect stim artifact
+% this_stim_binned = zeros(size(this_csc.tvec));
+% idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+% this_spk_binned(idx) = 1;
+% [xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+% tvec = tvec ./ Fs;
+% 
+% figure;
+% plot(tvec, xc, 'k', 'LineWidth', 2);
 
 
 %% load spikes

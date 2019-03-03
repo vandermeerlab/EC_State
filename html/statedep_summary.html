@@ -1,0 +1,2241 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>statedep_summary</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-03-02"><meta name="DC.source" content="statedep_summary.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">collect the outputs from statedep_all_phase_sandbox and statedep_latency_phase_sandbox</a></li><li><a href="#3">defaults</a></li><li><a href="#4">generate a latency and count summary</a></li><li><a href="#6">sort base on depth</a></li><li><a href="#7">get the freq list for legend</a></li><li><a href="#9">plots</a></li><li><a href="#12">count version</a></li><li><a href="#13">response version</a></li><li><a href="#15">make a response plot</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> statedep_summary
+</pre><h2>collect the outputs from statedep_all_phase_sandbox and statedep_latency_phase_sandbox<a name="2"></a></h2><h2>defaults<a name="3"></a></h2><pre class="codeinput"><span class="keyword">global</span> PARAMS
+<span class="keyword">if</span> isunix
+    addpath(genpath(<span class="string">'/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'</span>));
+    addpath(<span class="string">'/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions'</span>);
+
+    all_fig_dir = <span class="string">'/Volumes/Fenrir/State_dep/all_checks/'</span>;
+    all_lat_dir = <span class="string">'/Volumes/Fenrir/State_dep/all_lat/'</span>;
+    all_ccf_dir = <span class="string">'/Volumes/Fenrir/State_dep/all_ccf'</span>;
+    summary_dir = <span class="string">'/Volumes/Fenrir/State_dep/Summary/'</span>;
+<span class="keyword">else</span>
+    addpath(genpath(<span class="string">'D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'</span>));
+    addpath(genpath(<span class="string">'D:\Users\mvdmlab\My_Documents\GitHub\EC_State'</span>))
+
+    all_fig_dir = <span class="string">'G:\State_data\all_checks\'</span>;
+    all_lat_dir = <span class="string">'G:\State_data\all_lat\'</span>;
+
+<span class="keyword">end</span>
+
+mkdir(all_lat_dir); mkdir(all_fig_dir);
+
+
+
+font_size = 18;
+</pre><pre class="codeoutput">Warning: Function plot has the same name as a MATLAB builtin. We suggest you
+rename the function to avoid a potential name conflict. 
+Warning: Function plot has the same name as a MATLAB builtin. We suggest you
+rename the function to avoid a potential name conflict. 
+Warning: Directory already exists. 
+Warning: Directory already exists. 
+</pre><h2>generate a latency and count summary<a name="4"></a></h2><pre class="codeinput">cd(all_lat_dir);
+sess_list = dir(all_lat_dir);
+sess_list = sess_list(3:end);
+
+<span class="keyword">for</span> iSess = 1:length(sess_list)
+    load(sess_list(iSess).name);
+
+    these_cells = fieldnames(out);
+    <span class="keyword">for</span> iC = 1:length(these_cells)
+
+        this_cell = these_cells{iC};
+        <span class="keyword">if</span> ismember([sess_list(iSess).name(1:14) <span class="string">'_'</span> this_cell], PARAMS.Good_cells) <span class="comment">% check if this is a 'good' cell from above approvedd list</span>
+
+            freq_list = fieldnames(out.(this_cell));
+
+            <span class="keyword">for</span> iF = 1:length(freq_list)
+
+                all_cells.(this_cell) = out.(this_cell);
+
+            <span class="keyword">end</span>
+            <span class="comment">% subject hdr</span>
+<span class="comment">%             all_cells.(this_cell).hdr.name = sess_list(iSess).name(1:14);</span>
+<span class="comment">%             all_cells.(this_cell).hdr.date = sess_list(iSess).name(5:14);</span>
+<span class="comment">%             all_cells.(this_cell).hdr.subject = sess_list(iSess).name(1:3);</span>
+        <span class="keyword">else</span>
+            disp([<span class="string">'Skippking '</span> sess_list(iSess).name(1:14) <span class="string">'_'</span> this_cell <span class="string">'.  Not a ''good'' cell'</span>])
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Skippking M13_2018_12_04_TT3_01_Good.  Not a 'good' cell
+Skippking M13_2018_12_04_TT3_02_OK.  Not a 'good' cell
+Skippking M13_2018_12_04_TT6_01_OK.  Not a 'good' cell
+Skippking M13_2018_12_04_TT8_01_OK.  Not a 'good' cell
+Skippking M13_2018_12_04_TT8_02_OK.  Not a 'good' cell
+Skippking M13_2018_12_04_TT8_03_OK.  Not a 'good' cell
+Skippking M13_2018_12_04_TT8_04_OK.  Not a 'good' cell
+Skippking M13_2018_12_05_TT1_01.  Not a 'good' cell
+Skippking M13_2018_12_05_TT1_02.  Not a 'good' cell
+Skippking M13_2018_12_05_TT1_03.  Not a 'good' cell
+Skippking M13_2018_12_05_TT1_04.  Not a 'good' cell
+Skippking M13_2018_12_06_TT1_01_Good.  Not a 'good' cell
+Skippking M13_2018_12_06_TT6_01_OK.  Not a 'good' cell
+Skippking M13_2018_12_06_TT7_01_Good.  Not a 'good' cell
+Skippking M13_2018_12_06_TT7_02_OK.  Not a 'good' cell
+Skippking M13_2018_12_07_TT1_01_Good.  Not a 'good' cell
+Skippking M13_2018_12_07_TT3_03_Good.  Not a 'good' cell
+Skippking M13_2018_12_07_TT3_04_Good.  Not a 'good' cell
+Skippking M13_2018_12_14_TT3_01_Good.  Not a 'good' cell
+Skippking M13_2018_12_15_TT2_02_OK.  Not a 'good' cell
+Skippking M13_2018_12_15_TT2_03_OK.  Not a 'good' cell
+Skippking M14_2018_12_07_TT1_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_07_TT1_02_OK.  Not a 'good' cell
+Skippking M14_2018_12_07_TT2_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT1_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT1_02_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT1_03_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT3_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT3_02_Good.  Not a 'good' cell
+Skippking M14_2018_12_12_TT3_03_Good.  Not a 'good' cell
+Skippking M14_2018_12_14_TT5_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_14_TT7_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_16_TT1_01_Good.  Not a 'good' cell
+Skippking M14_2018_12_16_TT1_02_Good.  Not a 'good' cell
+</pre><pre class="codeinput">cell_list = fieldnames(all_cells);
+all_lat =[];
+all_count = [];
+<span class="keyword">for</span> iC = 1:length(cell_list)
+    this_cell = cell_list{iC};
+    f_list = fieldnames(all_cells.(this_cell));
+    cell_depths(iC) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
+    <span class="keyword">for</span> iF = 1:length(f_list)
+        <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>) || strcmp(f_list{iF}, <span class="string">'hdr'</span>)
+            <span class="keyword">continue</span>
+        <span class="keyword">else</span>
+                x_phase_resp(iC, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,:));
+
+            <span class="keyword">for</span> iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:)) <span class="comment">% get the phase segment numbers (should be 1:5 if phase split by 5</span>
+               <span class="comment">% labels for x axes</span>
+               phase_labels{iPhase} = [<span class="string">'p'</span> num2str(iPhase)];
+
+                <span class="comment">% get the latencies</span>
+                this_phase_idx = find(all_cells.(this_cell).(f_list{iF}).latency(1,:) == iPhase);
+                all_lat(iC, iPhase,iF)  = nanmean(all_cells.(this_cell).(f_list{iF}).latency(2,this_phase_idx)); <span class="comment">% in ms get the mean value for this cell in this freq at this phase bin</span>
+                <span class="comment">% same for spike count</span>
+                all_count(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).count(2,this_phase_idx)); <span class="comment">% in ms get the mean value for this cell in this freq at this phase bin</span>
+
+                all_resp(iC,iPhase,iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+
+                <span class="comment">% get all the reponses</span>
+
+                <span class="comment">% maybe shuffles?</span>
+                all_lat_shuf_mean(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); <span class="comment">% in ms get the mean value for this cell in this freq at this phase bin</span>
+                all_lat_shuf_std(iC, iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); <span class="comment">% in ms get the mean value for this cell in this freq at this phase bin</span>
+
+                all_resp_shuf_mean(iC,iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+                all_resp_shuf_std(iC,iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+
+
+                <span class="keyword">if</span> all_lat(iC, iPhase,iF) &gt; all_lat_shuf_mean(iC,iPhase,iF)+ 1.96*(all_lat_shuf_std(iC,iPhase,iF)) || all_lat(iC, iPhase,iF) &lt; all_lat_shuf_mean(iC,iPhase,iF)- 1.96*(all_lat_shuf_std(iC,iPhase,iF))
+                    all_lat_v_shuf(iC,iPhase,iF) = all_lat(iC, iPhase, iF);
+                <span class="keyword">else</span>
+                    all_lat_v_shuf(iC, iPhase, iF) = NaN;
+                <span class="keyword">end</span>
+
+                <span class="comment">%exceeds 2sd of shuffle for response</span>
+<span class="comment">%                  if all_resp(iC, iPhase,iF) &gt; all_resp_shuf_mean(iC,iPhase,iF)+ 1.96*(all_resp_shuf_std(iC,iPhase,iF)) || all_resp(iC, iPhase,iF) &lt; all_resp_shuf_mean(iC,iPhase,iF)- 1.96*(all_resp_shuf_std(iC,iPhase,iF))</span>
+                     all_resp_v_shuf(iC,iPhase,iF) = (all_resp(iC,iPhase,iF) - all_resp_shuf_mean(iC,iPhase,iF))/all_resp_shuf_std(iC,iPhase,iF);
+<span class="comment">%                 else</span>
+<span class="comment">%                     all_resp_v_shuf(iC, iPhase, iF) = NaN;</span>
+<span class="comment">%                 end</span>
+
+            <span class="keyword">end</span>
+            z_lat(iC, :,iF) = zscore(all_lat(iC, :,iF));
+            z_resp(iC, :,iF) = zscore(all_resp(iC, :,iF));
+            all_resp_v_all(iC,:,iF) = all_resp(iC,:,iF)./x_phase_resp(iC,iF);
+
+
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><h2>sort base on depth<a name="6"></a></h2><pre class="codeinput">[depth_sort, depth_ord] = sort(cell_depths, <span class="string">'descend'</span>);
+x_phase_resp_sort = x_phase_resp(depth_ord,:);
+all_resp_v_shuf_sort = all_resp_v_shuf(depth_ord,:,:);
+all_lat_sort = all_lat(depth_ord,:,:);
+all_resp_sort = all_resp(depth_ord,:,:);
+all_resp_v_all_sort = all_resp_v_all(depth_ord,:,:);
+all_lat_v_shuf_sort = all_lat_v_shuf(depth_ord,:,:);
+all_count_sort = all_count(depth_ord,:,:);
+
+<span class="keyword">for</span> ii =1:length(depth_sort)
+
+    labels{ii} = strcat(num2str(depth_sort(ii)), <span class="string">'_m_m '</span>, num2str(floor(x_phase_resp_sort(ii)*100)), <span class="string">'%'</span>);
+
+<span class="keyword">end</span>
+</pre><h2>get the freq list for legend<a name="7"></a></h2><pre class="codeinput"><span class="keyword">for</span> iF = 1:length(f_list)
+            <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>) || strcmp(f_list{iF}, <span class="string">'hdr'</span>)
+<span class="keyword">continue</span>
+            <span class="keyword">else</span>
+   leg_freq{iF} = [ strrep(f_list{iF}(3:end), <span class="string">'_'</span>, <span class="string">'-'</span>) <span class="string">'Hz'</span>];
+            <span class="keyword">end</span>
+
+
+<span class="keyword">end</span>
+</pre><pre class="codeinput"><span class="comment">% %% make a table of responsive cells, where they are, subject ID, ....</span>
+<span class="comment">% Sub_list = {'M13', 'M14'};</span>
+<span class="comment">% summary_table = cell(6,length(Sub_list)+1);</span>
+<span class="comment">% summary_table{2,1} = 'n Resp Cells';</span>
+<span class="comment">% for iSub = 1:length(Sub_list)</span>
+<span class="comment">%     summary_table{1, iSub+1} = Sub_list{iSub};</span>
+<span class="comment">%</span>
+<span class="comment">% end</span>
+<span class="comment">% for iC = 1:length(cell_list)</span>
+<span class="comment">%     this_cell = cell_list{iC};</span>
+<span class="comment">%     f_list = fieldnames(all_cells.(this_cell));</span>
+<span class="comment">%</span>
+<span class="comment">%     summary_table(</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">% end</span>
+</pre><h2>plots<a name="9"></a></h2><pre class="codeinput">figure(1)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_lat_sort(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+        colorbar
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Latency to first spike across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+
+saveas(gcf, [summary_dir <span class="string">'Summary_latency_raw.png'</span>]);
+saveas_eps(<span class="string">'Summary_latency_raw'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Figure (1) with properties:
+
+      Number: 1
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_01.png" alt=""> <pre class="codeinput">figure(2)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+
+        imagesc(all_lat_v_shuf_sort(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat_v_shuf_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+        colorbar
+
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Latency to first spike across cells (above 2d of shuf)'</span>], <span class="string">'fontsize'</span>, font_size)
+
+saveas(gcf, [summary_dir <span class="string">'Summary_latency_zshuf.png'</span>]);
+saveas_eps(<span class="string">'Summary_latency_z_shuf'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Figure (2) with properties:
+
+      Number: 2
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_02.png" alt=""> <p>same but for zscore</p><pre class="codeinput">figure(3)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(z_lat(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+        caxis([-2.5 2.5])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Zscore first spike latency across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_zscore.png'</span>]);
+saveas_eps(<span class="string">'Summary_zscore'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Figure (3) with properties:
+
+      Number: 3
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_03.png" alt=""> <h2>count version<a name="12"></a></h2><pre class="codeinput">figure(3)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_count_sort(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_count_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+<span class="comment">%         caxis([-2.5 2.5])</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'nSpikes per stim across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_count.png'</span>]);
+saveas_eps(<span class="string">'Summary_count'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Figure (3) with properties:
+
+      Number: 3
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_04.png" alt=""> <h2>response version<a name="13"></a></h2><pre class="codeinput">figure(5)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_sort(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_resp_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+<span class="comment">%         caxis([-2.5 2.5])</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Response per stim across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_resp.png'</span>]);
+saveas_eps(<span class="string">'Summary_resp'</span>, summary_dir)
+
+<span class="comment">% zscore</span>
+figure(6)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(z_resp(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+<span class="comment">%         caxis([-2.5 2.5])</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Zscore response per stim across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_resp_z.png'</span>]);
+saveas_eps(<span class="string">'Summary_resp_z'</span>, summary_dir)
+
+<span class="comment">% relative to all</span>
+<span class="comment">% zscore</span>
+figure(7)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_v_all_sort(:,:,iF))
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>)
+        ylabel(<span class="string">'cell id'</span>)
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels)
+        text(floor(length(phase_labels)/2),length(all_resp_v_all_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+<span class="comment">%         caxis([-2.5 2.5])</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Relative response per stim across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_resp_v_all.png'</span>]);
+saveas_eps(<span class="string">'Summary_resp_v_all'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Figure (5) with properties:
+
+      Number: 5
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+
+ans = 
+
+  Figure (6) with properties:
+
+      Number: 6
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+
+ans = 
+
+  Figure (7) with properties:
+
+      Number: 7
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_05.png" alt=""> <img vspace="5" hspace="5" src="statedep_summary_06.png" alt=""> <img vspace="5" hspace="5" src="statedep_summary_07.png" alt=""> <p>relative to shuffle zscore</p><pre class="codeinput">figure(8)
+<span class="keyword">for</span> iF = 1:length(f_list)
+    <span class="keyword">if</span> strcmp(f_list{iF}, <span class="string">'hdr'</span>) || strcmp(f_list{iF}, <span class="string">'ExpKeys'</span>)
+        <span class="keyword">continue</span>
+    <span class="keyword">else</span>
+        subplot(2,ceil(length(f_list)-1)/2, iF);
+        imagesc(all_resp_v_shuf_sort(:,:,iF));
+        axis <span class="string">xy</span>
+        xlabel(<span class="string">'phase'</span>);
+        ylabel(<span class="string">'cell id'</span>);
+        set(gca, <span class="string">'xticklabel'</span>, phase_labels);
+        set(gca,<span class="string">'ytick'</span>, [1:length(all_resp_v_shuf_sort(:,:,iF))], <span class="string">'yticklabel'</span>,labels ); <span class="comment">% [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]</span>
+        text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, <span class="string">'fontsize'</span>, font_size)
+
+        colorbar
+        caxis([-2.5 2.5])
+    <span class="keyword">end</span>
+    sig_cells = double(all_resp_v_shuf_sort(:,:,iF)&gt;1.96);
+    temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
+    temp_all_resp_v_shuf(sig_cells==0)=NaN;
+    add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
+<span class="keyword">end</span>
+SetFigure([], gcf)
+set(gcf, <span class="string">'position'</span>, [282   50  1200  720])
+ha = axes(<span class="string">'Position'</span>,[0 0 1 1],<span class="string">'Xlim'</span>,[0 1],<span class="string">'Ylim'</span>,[0  1],<span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="string">'Visible'</span>,<span class="string">'off'</span>,<span class="string">'Units'</span>,<span class="string">'normalized'</span>, <span class="string">'clipping'</span> , <span class="string">'off'</span>);
+text(0.35, 0.98,[<span class="string">'Zscore v Shuf per stim across cells'</span>], <span class="string">'fontsize'</span>, font_size)
+saveas(gcf, [summary_dir <span class="string">'Summary_resp_v_shuf.png'</span>]);
+saveas_eps(<span class="string">'Summary_resp_v_shuf'</span>, summary_dir)
+</pre><pre class="codeoutput">
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.1300 0.5838 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+Input vals only contain NaNs
+
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.4108 0.5838 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+Input vals only contain NaNs
+
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.6916 0.5838 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+Input vals only contain NaNs
+
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.1300 0.1100 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.4108 0.1100 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+
+ans = 
+
+  Axes with properties:
+
+             XLim: [0.5000 5.5000]
+             YLim: [0.5000 18.5000]
+           XScale: 'linear'
+           YScale: 'linear'
+    GridLineStyle: '-'
+         Position: [0.6916 0.1100 0.2134 0.3412]
+            Units: 'normalized'
+
+  Use GET to show all properties
+
+
+ans = 
+
+  Figure (8) with properties:
+
+      Number: 8
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_08.png" alt=""> <h2>make a response plot<a name="15"></a></h2><pre class="codeinput"><span class="comment">% get all responses p(Spike|stim)</span>
+
+<span class="comment">% x_phase_resp should be the same across f_list since it is the number of</span>
+<span class="comment">% responses and doesn't care about phase or freq.</span>
+f_cor = linspecer(size(all_resp,3))
+figure(9)
+<span class="keyword">for</span> iC =1:size(all_resp,1)
+    <span class="keyword">for</span> iF = 1:size(all_resp,3)
+<span class="comment">% get max phase</span>
+<span class="comment">% norm to lowest</span>
+
+[max_val, max_idx] = max(all_resp_v_shuf(iC,:,iF))<span class="comment">%./min(all_resp_v_shuf(iC,:,iF)));</span>
+
+<span class="comment">% get min phase</span>
+[min_val, min_idx] = min(all_resp_v_shuf(iC,:,iF));
+
+
+<span class="comment">% get ratio</span>
+resp_ratio(iC,iF) = abs(max_val-min_val);
+        freq_colors{iC, iF} = f_cor(iF,:);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+resp_ratio_1d = reshape(abs(resp_ratio), 1, numel(resp_ratio));
+resp_all_1d = reshape(x_phase_resp_sort, 1, numel(x_phase_resp));
+freq_colors_1d = reshape(freq_colors,1, numel(freq_colors));
+
+<span class="comment">% generate figure</span>
+<span class="comment">% subplot(2,1,1)</span>
+<span class="keyword">for</span> iC = 1:length(resp_all_1d)
+hold <span class="string">on</span>
+    scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, <span class="string">'filled'</span>)
+<span class="keyword">end</span>
+xlabel(<span class="string">'p(spike|stim)'</span>)
+ylabel(<span class="string">'zscore diff (max phase - min phase)'</span>)
+<span class="comment">%ylabel('ratio of max phase / min phase response')</span>
+h = zeros(size(all_resp,3), 1);
+<span class="keyword">for</span> iF = 1:size(all_resp,3)
+h(iF) = plot(NaN,NaN,<span class="string">'o'</span>, <span class="string">'color'</span>, f_cor(iF, :), <span class="string">'MarkerFaceColor'</span>, f_cor(iF,:));
+<span class="keyword">end</span>
+legend(h, leg_freq);
+legend(<span class="string">'boxoff'</span>)
+<span class="comment">% legend(leg_freq)</span>
+<span class="comment">% xlim([.25 .75])</span>
+<span class="comment">% ylim([1 3])</span>
+
+SetFigure([], gcf)
+saveas(gcf, [summary_dir <span class="string">'Summary_resp_ratio.png'</span>]);
+saveas_eps(<span class="string">'Summary_resp_ratio'</span>, summary_dir)
+</pre><pre class="codeoutput">
+f_cor =
+
+    0.9047    0.1918    0.1988
+    0.2941    0.5447    0.7494
+    0.3718    0.7176    0.3612
+    1.0000    0.5482    0.1000
+    0.9550    0.8946    0.4722
+    0.6859    0.4035    0.2412
+
+
+max_val =
+
+    0.5341
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.4819
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    1.5887
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    1.2286
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.7561
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.1200
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.0148
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7309
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.9661
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.5826
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.2933
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.3609
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.8985
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.2786
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.5770
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.2165
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.9439
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.6209
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    1.2605
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.9889
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.7828
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.7609
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.6844
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    1.1746
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.7136
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.8613
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.4239
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.2166
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    2.9426
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    3.3092
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    2.3206
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.7198
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.9744
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.6450
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.5867
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.8120
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    1.3359
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.6545
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.2756
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.5323
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.7743
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7898
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.0455
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.9091
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.8114
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.6873
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.9535
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.3067
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.3950
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.2079
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.1840
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.4265
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.1051
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.5739
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7834
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.5565
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.1301
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.4734
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    1.1628
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    1.8146
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.7748
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.9358
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.8870
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.3625
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.5892
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    1.6756
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.3443
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.7283
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.6371
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7096
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.6036
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.8376
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.8736
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.4974
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.8779
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.6814
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.8842
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.8093
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7352
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.7534
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.1827
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.4511
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.2031
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.2180
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.7532
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    0.8355
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.7807
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.8653
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    1.0051
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.2826
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.7491
+
+
+max_idx =
+
+     2
+
+
+max_val =
+
+    0.4211
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.2436
+
+
+max_idx =
+
+     1
+
+
+max_val =
+
+    1.2163
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.4898
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.4227
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    1.0822
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.8536
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.6004
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    1.0584
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.7566
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.8428
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.8180
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    1.2010
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.4426
+
+
+max_idx =
+
+     3
+
+
+max_val =
+
+    0.5660
+
+
+max_idx =
+
+     4
+
+
+max_val =
+
+    0.4624
+
+
+max_idx =
+
+     5
+
+
+max_val =
+
+    0.7816
+
+
+max_idx =
+
+     2
+
+
+ans = 
+
+  Figure (9) with properties:
+
+      Number: 9
+        Name: ''
+       Color: [0.9400 0.9400 0.9400]
+    Position: [600 50 784 588]
+       Units: 'pixels'
+
+  Use GET to show all properties
+
+</pre><img vspace="5" hspace="5" src="statedep_summary_09.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function statedep_summary
+%% collect the outputs from statedep_all_phase_sandbox and statedep_latency_phase_sandbox
+%
+%
+%
+
+%% defaults
+global PARAMS
+if isunix
+    addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
+    addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
+    
+    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
+    all_lat_dir = '/Volumes/Fenrir/State_dep/all_lat/';
+    all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf';
+    summary_dir = '/Volumes/Fenrir/State_dep/Summary/';
+else
+    addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+    addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
+    
+    all_fig_dir = 'G:\State_data\all_checks\';
+    all_lat_dir = 'G:\State_data\all_lat\';
+    
+end
+
+mkdir(all_lat_dir); mkdir(all_fig_dir);
+
+
+
+font_size = 18;
+%% generate a latency and count summary
+cd(all_lat_dir);
+sess_list = dir(all_lat_dir);
+sess_list = sess_list(3:end);
+
+for iSess = 1:length(sess_list)
+    load(sess_list(iSess).name);
+    
+    these_cells = fieldnames(out);
+    for iC = 1:length(these_cells)
+        
+        this_cell = these_cells{iC};
+        if ismember([sess_list(iSess).name(1:14) '_' this_cell], PARAMS.Good_cells) % check if this is a 'good' cell from above approvedd list
+            
+            freq_list = fieldnames(out.(this_cell));
+            
+            for iF = 1:length(freq_list)
+                
+                all_cells.(this_cell) = out.(this_cell);
+                
+            end
+            % subject hdr
+%             all_cells.(this_cell).hdr.name = sess_list(iSess).name(1:14);
+%             all_cells.(this_cell).hdr.date = sess_list(iSess).name(5:14);
+%             all_cells.(this_cell).hdr.subject = sess_list(iSess).name(1:3);
+        else
+            disp(['Skippking ' sess_list(iSess).name(1:14) '_' this_cell '.  Not a ''good'' cell'])
+        end
+        
+    end
+    
+end
+
+%%
+cell_list = fieldnames(all_cells);
+all_lat =[];
+all_count = [];
+for iC = 1:length(cell_list)
+    this_cell = cell_list{iC};
+    f_list = fieldnames(all_cells.(this_cell));
+    cell_depths(iC) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
+    for iF = 1:length(f_list)
+        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+            continue
+        else
+                x_phase_resp(iC, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,:));
+
+            for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:)) % get the phase segment numbers (should be 1:5 if phase split by 5
+               % labels for x axes
+               phase_labels{iPhase} = ['p' num2str(iPhase)];
+
+                % get the latencies
+                this_phase_idx = find(all_cells.(this_cell).(f_list{iF}).latency(1,:) == iPhase);
+                all_lat(iC, iPhase,iF)  = nanmean(all_cells.(this_cell).(f_list{iF}).latency(2,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+                % same for spike count
+                all_count(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).count(2,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+                
+                all_resp(iC,iPhase,iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+                
+                % get all the reponses
+
+                % maybe shuffles?
+                all_lat_shuf_mean(iC, iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+                all_lat_shuf_std(iC, iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).latency_shuf(1,this_phase_idx)); % in ms get the mean value for this cell in this freq at this phase bin
+
+                all_resp_shuf_mean(iC,iPhase, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+                all_resp_shuf_std(iC,iPhase, iF) = nanstd(all_cells.(this_cell).(f_list{iF}).resp_shuf(1,this_phase_idx));
+
+                
+                if all_lat(iC, iPhase,iF) > all_lat_shuf_mean(iC,iPhase,iF)+ 1.96*(all_lat_shuf_std(iC,iPhase,iF)) || all_lat(iC, iPhase,iF) < all_lat_shuf_mean(iC,iPhase,iF)- 1.96*(all_lat_shuf_std(iC,iPhase,iF))
+                    all_lat_v_shuf(iC,iPhase,iF) = all_lat(iC, iPhase, iF);
+                else
+                    all_lat_v_shuf(iC, iPhase, iF) = NaN; 
+                end
+                
+                %exceeds 2sd of shuffle for response
+%                  if all_resp(iC, iPhase,iF) > all_resp_shuf_mean(iC,iPhase,iF)+ 1.96*(all_resp_shuf_std(iC,iPhase,iF)) || all_resp(iC, iPhase,iF) < all_resp_shuf_mean(iC,iPhase,iF)- 1.96*(all_resp_shuf_std(iC,iPhase,iF))
+                     all_resp_v_shuf(iC,iPhase,iF) = (all_resp(iC,iPhase,iF) - all_resp_shuf_mean(iC,iPhase,iF))/all_resp_shuf_std(iC,iPhase,iF);
+%                 else
+%                     all_resp_v_shuf(iC, iPhase, iF) = NaN; 
+%                 end
+                
+            end
+            z_lat(iC, :,iF) = zscore(all_lat(iC, :,iF));
+            z_resp(iC, :,iF) = zscore(all_resp(iC, :,iF));
+            all_resp_v_all(iC,:,iF) = all_resp(iC,:,iF)./x_phase_resp(iC,iF);
+
+            
+        end
+    end
+    
+end
+%% sort base on depth
+[depth_sort, depth_ord] = sort(cell_depths, 'descend');
+x_phase_resp_sort = x_phase_resp(depth_ord,:);
+all_resp_v_shuf_sort = all_resp_v_shuf(depth_ord,:,:);
+all_lat_sort = all_lat(depth_ord,:,:);
+all_resp_sort = all_resp(depth_ord,:,:);
+all_resp_v_all_sort = all_resp_v_all(depth_ord,:,:);
+all_lat_v_shuf_sort = all_lat_v_shuf(depth_ord,:,:);
+all_count_sort = all_count(depth_ord,:,:);
+
+for ii =1:length(depth_sort)
+    
+    labels{ii} = strcat(num2str(depth_sort(ii)), '_m_m ', num2str(floor(x_phase_resp_sort(ii)*100)), '%');
+
+end
+
+%% get the freq list for legend
+for iF = 1:length(f_list)
+            if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+continue
+            else
+   leg_freq{iF} = [ strrep(f_list{iF}(3:end), '_', '-') 'Hz'];
+            end
+    
+    
+end
+
+%% 
+
+% %% make a table of responsive cells, where they are, subject ID, ....
+% Sub_list = {'M13', 'M14'}; 
+% summary_table = cell(6,length(Sub_list)+1);
+% summary_table{2,1} = 'n Resp Cells';
+% for iSub = 1:length(Sub_list)
+%     summary_table{1, iSub+1} = Sub_list{iSub};
+% 
+% end
+% for iC = 1:length(cell_list)
+%     this_cell = cell_list{iC};
+%     f_list = fieldnames(all_cells.(this_cell));
+%     
+%     summary_table(
+%     
+%     
+%     
+%     
+% end
+
+
+%% plots
+figure(1)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_lat_sort(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat_sort)+1, f_list{iF}, 'fontsize', font_size)
+        colorbar
+        
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Latency to first spike across cells'], 'fontsize', font_size)
+
+saveas(gcf, [summary_dir 'Summary_latency_raw.png']);
+saveas_eps('Summary_latency_raw', summary_dir)
+%%
+figure(2)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        
+        imagesc(all_lat_v_shuf_sort(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
+        colorbar
+        
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Latency to first spike across cells (above 2d of shuf)'], 'fontsize', font_size)
+
+saveas(gcf, [summary_dir 'Summary_latency_zshuf.png']);
+saveas_eps('Summary_latency_z_shuf', summary_dir)
+%%
+% same but for zscore
+figure(3)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(z_lat(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+        caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Zscore first spike latency across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_zscore.png']);
+saveas_eps('Summary_zscore', summary_dir)
+
+%% count version
+
+figure(3)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_count_sort(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_count_sort)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['nSpikes per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_count.png']);
+saveas_eps('Summary_count', summary_dir)
+
+
+%% response version
+figure(5)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_sort(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_resp_sort)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp.png']);
+saveas_eps('Summary_resp', summary_dir)
+
+% zscore
+figure(6)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(z_resp(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Zscore response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_z.png']);
+saveas_eps('Summary_resp_z', summary_dir)
+
+% relative to all
+% zscore
+figure(7)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF)
+        imagesc(all_resp_v_all_sort(:,:,iF))
+        axis xy
+        xlabel('phase')
+        ylabel('cell id')
+        set(gca, 'xticklabel', phase_labels)
+        text(floor(length(phase_labels)/2),length(all_resp_v_all_sort)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+%         caxis([-2.5 2.5])
+    end
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Relative response per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_v_all.png']);
+saveas_eps('Summary_resp_v_all', summary_dir)
+%%
+% relative to shuffle
+% zscore
+figure(8)
+for iF = 1:length(f_list)
+    if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
+        continue
+    else
+        subplot(2,ceil(length(f_list)-1)/2, iF);
+        imagesc(all_resp_v_shuf_sort(:,:,iF));
+        axis xy
+        xlabel('phase');
+        ylabel('cell id');
+        set(gca, 'xticklabel', phase_labels);
+        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+        text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
+        
+        colorbar
+        caxis([-2.5 2.5])
+    end
+    sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
+    temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
+    temp_all_resp_v_shuf(sig_cells==0)=NaN;
+    add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
+end
+SetFigure([], gcf)
+set(gcf, 'position', [282   50  1200  720])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+text(0.35, 0.98,['Zscore v Shuf per stim across cells'], 'fontsize', font_size)
+saveas(gcf, [summary_dir 'Summary_resp_v_shuf.png']);
+saveas_eps('Summary_resp_v_shuf', summary_dir)
+%% make a response plot
+
+
+
+% get all responses p(Spike|stim)
+
+% x_phase_resp should be the same across f_list since it is the number of
+% responses and doesn't care about phase or freq.
+f_cor = linspecer(size(all_resp,3))
+figure(9)
+for iC =1:size(all_resp,1)
+    for iF = 1:size(all_resp,3)
+% get max phase
+% norm to lowest
+
+[max_val, max_idx] = max(all_resp_v_shuf(iC,:,iF))%./min(all_resp_v_shuf(iC,:,iF)));
+
+% get min phase
+[min_val, min_idx] = min(all_resp_v_shuf(iC,:,iF));
+
+
+% get ratio
+resp_ratio(iC,iF) = abs(max_val-min_val); 
+        freq_colors{iC, iF} = f_cor(iF,:);
+    end
+end
+resp_ratio_1d = reshape(abs(resp_ratio), 1, numel(resp_ratio));
+resp_all_1d = reshape(x_phase_resp_sort, 1, numel(x_phase_resp));
+freq_colors_1d = reshape(freq_colors,1, numel(freq_colors));
+
+% generate figure
+% subplot(2,1,1)
+for iC = 1:length(resp_all_1d)
+hold on
+    scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
+end
+xlabel('p(spike|stim)')
+ylabel('zscore diff (max phase - min phase)')
+%ylabel('ratio of max phase / min phase response')
+h = zeros(size(all_resp,3), 1);
+for iF = 1:size(all_resp,3)
+h(iF) = plot(NaN,NaN,'o', 'color', f_cor(iF, :), 'MarkerFaceColor', f_cor(iF,:));
+end
+legend(h, leg_freq);
+legend('boxoff')
+% legend(leg_freq)
+% xlim([.25 .75])
+% ylim([1 3])
+
+SetFigure([], gcf)
+saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
+saveas_eps('Summary_resp_ratio', summary_dir)
+
+##### SOURCE END #####
+--></body></html>

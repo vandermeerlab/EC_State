@@ -5,7 +5,7 @@ function statedep_summary
 %
 
 %% defaults
-
+global PARAMS
 if isunix
     addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
     addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
@@ -24,24 +24,7 @@ else
 end
 
 mkdir(all_lat_dir); mkdir(all_fig_dir);
-% list of manually approved cells
-good_sess_list = {'M13_2018_12_09_TT1_05_OK',...
-    'M13_2018_12_09_TT6_01_OK',...
-    'M13_2018_12_09_TT8_01_OK',...
-    'M13_2018_12_11_TT7_01_OK',...
-    'M13_2018_12_11_TT7_02_OK',...
-    'M13_2018_12_16_TT3_02_OK',...
-    'M13_2018_12_17_TT2_02_Good',...
-    'M14_2018_12_01_TT3_02_OK',...
-    'M14_2018_12_08_TT1_04_Good',...
-    'M14_2018_12_09_TT8_02_OK',...
-    'M14_2018_12_15_TT1_03_OK',...
-    'M14_2018_12_17_TT2_01_OK', ...
-    'M16_2019_02_15_TT6_02_Good', ...
-    'M16_2019_02_16_TT5_02_Good'};
-%     'M14_2018_12_10_TT1_02_Good',...
-%     'M14_2018_12_10_TT2_01_Good',...
-%     'M14_2018_12_10_TT2_02_Good',...
+
 
 
 font_size = 18;
@@ -57,7 +40,7 @@ for iSess = 1:length(sess_list)
     for iC = 1:length(these_cells)
         
         this_cell = these_cells{iC};
-        if ismember([sess_list(iSess).name(1:14) '_' this_cell], good_sess_list) % check if this is a 'good' cell from above approvedd list
+        if ismember([sess_list(iSess).name(1:14) '_' this_cell], PARAMS.Good_cells) % check if this is a 'good' cell from above approvedd list
             
             freq_list = fieldnames(out.(this_cell));
             
@@ -70,6 +53,8 @@ for iSess = 1:length(sess_list)
 %             all_cells.(this_cell).hdr.name = sess_list(iSess).name(1:14);
 %             all_cells.(this_cell).hdr.date = sess_list(iSess).name(5:14);
 %             all_cells.(this_cell).hdr.subject = sess_list(iSess).name(1:3);
+        else
+            disp(['Skippking ' sess_list(iSess).name(1:14) '_' this_cell '.  Not a ''good'' cell'])
         end
         
     end
@@ -83,7 +68,7 @@ all_count = [];
 for iC = 1:length(cell_list)
     this_cell = cell_list{iC};
     f_list = fieldnames(all_cells.(this_cell));
-    
+    cell_depths(iC) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
     for iF = 1:length(f_list)
         if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
             continue
@@ -135,26 +120,53 @@ for iC = 1:length(cell_list)
     end
     
 end
+%% sort base on depth
+[depth_sort, depth_ord] = sort(cell_depths, 'descend');
+x_phase_resp_sort = x_phase_resp(depth_ord,:);
+all_resp_v_shuf_sort = all_resp_v_shuf(depth_ord,:,:);
+all_lat_sort = all_lat(depth_ord,:,:);
+all_resp_sort = all_resp(depth_ord,:,:);
+all_resp_v_all_sort = all_resp_v_all(depth_ord,:,:);
+all_lat_v_shuf_sort = all_lat_v_shuf(depth_ord,:,:);
+all_count_sort = all_count(depth_ord,:,:);
 
-
-%% make a table of responsive cells, where they are, subject ID, ....
-Sub_list = {'M13', 'M14'}; 
-summary_table = cell(6,length(Sub_list)+1);
-summary_table{2,1} = 'n Resp Cells';
-for iSub = 1:length(Sub_list)
-    summary_table{1, iSub+1} = Sub_list{iSub};
+for ii =1:length(depth_sort)
+    
+    labels{ii} = strcat(num2str(depth_sort(ii)), '_m_m ', num2str(floor(x_phase_resp_sort(ii)*100)), '%');
 
 end
-for iC = 1:length(cell_list)
-    this_cell = cell_list{iC};
-    f_list = fieldnames(all_cells.(this_cell));
-    
-    summary_table(
-    
-    
+
+%% get the freq list for legend
+for iF = 1:length(f_list)
+            if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+continue
+            else
+   leg_freq{iF} = [ strrep(f_list{iF}(3:end), '_', '-') 'Hz'];
+            end
     
     
 end
+
+%% 
+
+% %% make a table of responsive cells, where they are, subject ID, ....
+% Sub_list = {'M13', 'M14'}; 
+% summary_table = cell(6,length(Sub_list)+1);
+% summary_table{2,1} = 'n Resp Cells';
+% for iSub = 1:length(Sub_list)
+%     summary_table{1, iSub+1} = Sub_list{iSub};
+% 
+% end
+% for iC = 1:length(cell_list)
+%     this_cell = cell_list{iC};
+%     f_list = fieldnames(all_cells.(this_cell));
+%     
+%     summary_table(
+%     
+%     
+%     
+%     
+% end
 
 
 %% plots
@@ -164,12 +176,12 @@ for iF = 1:length(f_list)
         continue
     else
         subplot(2,ceil(length(f_list)-1)/2, iF)
-        imagesc(all_lat(:,:,iF))
+        imagesc(all_lat_sort(:,:,iF))
         axis xy
         xlabel('phase')
         ylabel('cell id')
         set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        text(floor(length(phase_labels)/2),length(all_lat_sort)+1, f_list{iF}, 'fontsize', font_size)
         colorbar
         
     end
@@ -189,12 +201,12 @@ for iF = 1:length(f_list)
     else
         subplot(2,ceil(length(f_list)-1)/2, iF)
         
-        imagesc(all_lat_v_shuf(:,:,iF))
+        imagesc(all_lat_v_shuf_sort(:,:,iF))
         axis xy
         xlabel('phase')
         ylabel('cell id')
         set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        text(floor(length(phase_labels)/2),length(all_lat_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
         colorbar
         
     end
@@ -240,12 +252,12 @@ for iF = 1:length(f_list)
         continue
     else
         subplot(2,ceil(length(f_list)-1)/2, iF)
-        imagesc(all_count(:,:,iF))
+        imagesc(all_count_sort(:,:,iF))
         axis xy
         xlabel('phase')
         ylabel('cell id')
         set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        text(floor(length(phase_labels)/2),length(all_count_sort)+1, f_list{iF}, 'fontsize', font_size)
         
         colorbar
 %         caxis([-2.5 2.5])
@@ -266,12 +278,12 @@ for iF = 1:length(f_list)
         continue
     else
         subplot(2,ceil(length(f_list)-1)/2, iF)
-        imagesc(all_resp(:,:,iF))
+        imagesc(all_resp_sort(:,:,iF))
         axis xy
         xlabel('phase')
         ylabel('cell id')
         set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        text(floor(length(phase_labels)/2),length(all_resp_sort)+1, f_list{iF}, 'fontsize', font_size)
         
         colorbar
 %         caxis([-2.5 2.5])
@@ -317,12 +329,12 @@ for iF = 1:length(f_list)
         continue
     else
         subplot(2,ceil(length(f_list)-1)/2, iF)
-        imagesc(all_resp_v_all(:,:,iF))
+        imagesc(all_resp_v_all_sort(:,:,iF))
         axis xy
         xlabel('phase')
         ylabel('cell id')
         set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        text(floor(length(phase_labels)/2),length(all_resp_v_all_sort)+1, f_list{iF}, 'fontsize', font_size)
         
         colorbar
 %         caxis([-2.5 2.5])
@@ -334,7 +346,7 @@ ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible',
 text(0.35, 0.98,['Relative response per stim across cells'], 'fontsize', font_size)
 saveas(gcf, [summary_dir 'Summary_resp_v_all.png']);
 saveas_eps('Summary_resp_v_all', summary_dir)
-
+%%
 % relative to shuffle
 % zscore
 figure(8)
@@ -342,17 +354,22 @@ for iF = 1:length(f_list)
     if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
         continue
     else
-        subplot(2,ceil(length(f_list)-1)/2, iF)
-        imagesc(all_resp_v_shuf(:,:,iF))
+        subplot(2,ceil(length(f_list)-1)/2, iF);
+        imagesc(all_resp_v_shuf_sort(:,:,iF));
         axis xy
-        xlabel('phase')
-        ylabel('cell id')
-        set(gca, 'xticklabel', phase_labels)
-        text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
+        xlabel('phase');
+        ylabel('cell id');
+        set(gca, 'xticklabel', phase_labels);
+        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+        text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
         
         colorbar
-%         caxis([-2.5 2.5])
+        caxis([-2.5 2.5])
     end
+    sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
+    temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
+    temp_all_resp_v_shuf(sig_cells==0)=NaN;
+    add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
 end
 SetFigure([], gcf)
 set(gcf, 'position', [282   50  1200  720])
@@ -367,32 +384,48 @@ saveas_eps('Summary_resp_v_shuf', summary_dir)
 % get all responses p(Spike|stim)
 
 % x_phase_resp should be the same across f_list since it is the number of
-% responses and doesn't care about phase or freq. 
+% responses and doesn't care about phase or freq.
+f_cor = linspecer(size(all_resp,3))
 figure(9)
 for iC =1:size(all_resp,1)
     for iF = 1:size(all_resp,3)
 % get max phase
-[max_val, max_idx] = max(all_resp(iC,:,iF));
+% norm to lowest
+
+[max_val, max_idx] = max(all_resp_v_shuf(iC,:,iF))%./min(all_resp_v_shuf(iC,:,iF)));
 
 % get min phase
-[min_val, min_idx] = min(all_resp(iC,:,iF));
+[min_val, min_idx] = min(all_resp_v_shuf(iC,:,iF));
 
 
 % get ratio
-resp_ratio(iC,iF) = max_val/min_val; 
-
+resp_ratio(iC,iF) = abs(max_val-min_val); 
+        freq_colors{iC, iF} = f_cor(iF,:);
     end
 end
-resp_ratio_1d = reshape(resp_ratio, 1, numel(resp_ratio));
-resp_all_1d = reshape(x_phase_resp, 1, numel(x_phase_resp));
-
-
+resp_ratio_1d = reshape(abs(resp_ratio), 1, numel(resp_ratio));
+resp_all_1d = reshape(x_phase_resp_sort, 1, numel(x_phase_resp));
+freq_colors_1d = reshape(freq_colors,1, numel(freq_colors));
 
 % generate figure
 % subplot(2,1,1)
-scatter(resp_all_1d, resp_ratio_1d,100, 'filled')
+for iC = 1:length(resp_all_1d)
+hold on
+    scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
+end
 xlabel('p(spike|stim)')
-ylabel('ratio of max phase / min phase response')
+ylabel('zscore diff (max phase - min phase)')
+%ylabel('ratio of max phase / min phase response')
+h = zeros(size(all_resp,3), 1);
+for iF = 1:size(all_resp,3)
+h(iF) = plot(NaN,NaN,'o', 'color', f_cor(iF, :), 'MarkerFaceColor', f_cor(iF,:));
+end
+legend(h, leg_freq);
+legend('boxoff')
+% legend(leg_freq)
+% xlim([.25 .75])
+% ylim([1 3])
+
 SetFigure([], gcf)
 saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
 saveas_eps('Summary_resp_ratio', summary_dir)

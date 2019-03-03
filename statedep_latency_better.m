@@ -25,26 +25,30 @@ else
     
 end
 
-good_sess_list = {'M13_2018_12_09_TT1_05_OK',...
-    'M13_2018_12_09_TT6_01_OK',...
-    'M13_2018_12_09_TT8_01_OK',...
-    'M13_2018_12_11_TT7_01_OK',...
-    'M13_2018_12_11_TT7_02_OK',...
-    'M13_2018_12_16_TT3_02_OK',...
-    'M13_2018_12_17_TT2_02_Good',...
-    'M14_2018_12_01_TT3_02_OK',...
-    'M14_2018_12_08_TT1_04_Good',...
-    'M14_2018_12_09_TT8_02_OK',...
-    'M14_2018_12_10_TT1_02_Good',...
-    'M14_2018_12_10_TT2_01_Good',...
-    'M14_2018_12_10_TT2_02_Good',...
-    'M14_2018_12_15_TT1_03_OK',...
-    'M14_2018_12_17_TT2_01_OK'};
+global PARAMS
+%%
+%expkeys duplicate check
+            these_files = dir;
+            for iF = 1:length(these_files)
+                if length(these_files(iF).name) <=2
+                    continue
+                else
+                    if strcmp(these_files(iF).name(1:2), '._')
+                        delete(these_files(iF).name)
+                    end
+                end
+            end
+            %%
 
 mkdir(all_lat_dir); mkdir(all_fig_dir);
 %% defaults
 font_size = 18;
 LoadExpKeys
+%% set up some baselines
+cfg_def = [];
+cfg_def.baseline_cor = 'on';
+
+
 %% load CSC
 cfg = [];
 %cfg.decimateByFactor = 30;
@@ -91,7 +95,7 @@ for iC = 1:length(S.label)
     cell_id = this_S.label{1}(1:end-2);
     cell_id = strrep(cell_id, '_SS', '');
     
-    if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], good_sess_list) % don't bother processing artifacts
+    if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], PARAMS.Good_cells) % don't bother processing artifacts
         continue
     end
     
@@ -137,7 +141,7 @@ for iC = 1:length(S.label)
         all_phase_labels = NaN(1,length(laser_on.t{1}));
         all_resp = NaN(2, length(laser_on.t{1}));
         all_resp_shuf = NaN(2,length(laser_on.t{1}), nShuf);
-
+        
         % Get the phase labels
         for iPhase = 1:n_phases
             [~, this_phase_idx] = find(stim_phase > edges(iPhase) & stim_phase < edges(iPhase+1));
@@ -185,6 +189,13 @@ for iC = 1:length(S.label)
                     % get the spike count
                     this_event_spikes = restrict(this_S, (xbin_centers(peak_idx)-0.001)+laser_on.t{1}(iEvt), (xbin_centers(peak_idx)+0.001)+laser_on.t{1}(iEvt));
                     all_count(2,iEvt) = length(this_event_spikes.t{1});
+                    % baseline correct (take the same window before the
+                    % event and subtract that from the post-event
+                    if strcmp(cfg_def.baseline_cor, 'on') || cfg_def.baseline_cor ==1;
+                        
+                        this_event_spikes_pre = restrict(this_S, laser_on.t{1}(iEvt)-0.002,laser_on.t{1}(iEvt));
+                        all_base_cout(2,iEvt) = length(this_event_spikes.t{1}) - length(this_event_spikes_pre.t{1});
+                    end
                 end
             end
         end
@@ -192,7 +203,7 @@ for iC = 1:length(S.label)
         
         % convert lags from S to ms
         
-        all_lat(2,:)  = all_lat(2,:)*1000; 
+        all_lat(2,:)  = all_lat(2,:)*1000;
         xbin_centers_ms = xbin_centers*1000;
         
         % get the response 1 or nan
@@ -203,6 +214,7 @@ for iC = 1:length(S.label)
                 all_resp(2,iEvt) = 0;
             end
         end
+        
         
         % get the shuffle
         for iS = nShuf:-1:1
@@ -216,18 +228,18 @@ for iC = 1:length(S.label)
             all_resp_shuf(2,:,iS) = all_resp(2,mix);
             
         end
-         % average over shuffles to get a temporary shuffle array
-            for iEvt = 1:length(laser_on.t{1})
-                temp_lat_shuf(iEvt) = nanmean(all_lat_shuf(2,iEvt,:));
-                temp_count_shuf(iEvt) = nanmean(all_count_shuf(2,iEvt,:));
-                
-                all_resp_shuf_mean(iEvt) = nanmean(all_resp_shuf(2,iEvt,:));
-            end
-         
-         % get the means for each phase bin
+        % average over shuffles to get a temporary shuffle array
+        for iEvt = 1:length(laser_on.t{1})
+            temp_lat_shuf(iEvt) = nanmean(all_lat_shuf(2,iEvt,:));
+            temp_count_shuf(iEvt) = nanmean(all_count_shuf(2,iEvt,:));
+            
+            all_resp_shuf_mean(iEvt) = nanmean(all_resp_shuf(2,iEvt,:));
+        end
+        
+        % get the means for each phase bin
         for iPhase = 1:n_phases
             [~, this_phase_idx] = find(all_lat(1,:)==iPhase); % get the index of values for this phase
-                        
+            
             mean_lat(iPhase) = nanmean(all_lat(2,this_phase_idx));
             std_lat(iPhase) = nanstd(all_lat(2,this_phase_idx));
             mean_count(iPhase) = nanmean(all_count(2,this_phase_idx));
@@ -237,15 +249,15 @@ for iC = 1:length(S.label)
             % get the means for shuffles
             mean_shuf(iPhase) = nanmean(temp_lat_shuf(this_phase_idx));
             std_shuf(iPhase) = nanstd(temp_lat_shuf(this_phase_idx));
-
-
+            
+            
         end
         
         % make phase labels
         for ii = unique(all_lat(1,:))
             phase_labels{ii} = ['p' num2str(ii)];
         end
-            
+        
         %% make a figure
         figure(1);
         c_ord = linspecer(n_phases);
@@ -263,7 +275,7 @@ for iC = 1:length(S.label)
         axis off
         title(sprintf('%.1f to %.1f Hz', f_list{iF}(1), f_list{iF}(2)), 'fontsize', font_size)
         
-
+        
         for iPhase = 1:n_phases
             [~, this_phase_idx] = find(all_lat(1,:)==iPhase); % get the index of values for this phase
             
@@ -272,10 +284,10 @@ for iC = 1:length(S.label)
             h = histogram(all_lat(2,this_phase_idx), xbin_centers_ms);
             h.FaceColor = c_ord(iPhase,:);
             h.EdgeColor = c_ord(iPhase,:);
-%             ylim([0 20])
+            %             ylim([0 20])
             xlim(hist_lim*1000)
             xlabel('latency (ms)')
-
+            
             set(gca, 'fontsize', font_size)
             
             subplot(4, ceil(n_phases/2), [n_phases+2  4*ceil(n_phases/2)])
@@ -283,13 +295,13 @@ for iC = 1:length(S.label)
             he = errorbar(iPhase, mean_lat(iPhase), 1.96*std_lat(iPhase), 'o', 'color', c_ord(iPhase,:),'MarkerFaceColor', c_ord(iPhase,:), 'markersize', 10);
             %shuf for this phase bin
             he = errorbar(iPhase, mean_shuf(iPhase), 1.96*std_shuf(iPhase), 'o', 'color', 'k','MarkerFaceColor', 'k', 'markersize', 10);
-
+            
             set(gca, 'fontsize', font_size);
             %             xlabel('Phase')
-%             xlim([-0.5 n_phases+0.5])
+            %             xlim([-0.5 n_phases+0.5])
             ylabel('Mean latency (ms)')
-                        set(gca, 'xtick', 1:n_phases, 'xticklabel', phase_labels)
-%             set(gca, 'xticklabel', '')
+            set(gca, 'xtick', 1:n_phases, 'xticklabel', phase_labels)
+            %             set(gca, 'xticklabel', '')
         end
         
         %         SetFigure([], gcf)
@@ -297,53 +309,53 @@ for iC = 1:length(S.label)
         %
         ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
         text(0.35, 0.98,[ExpKeys.subject '_' ExpKeys.date '  Cell ' cell_id], 'fontsize', font_size)
-                saveas(gcf, [all_fig_dir ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency.png']);
-                saveas_eps([ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency'], all_fig_dir)
+        saveas(gcf, [all_fig_dir ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency.png']);
+        saveas_eps([ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency'], all_fig_dir)
         %%
-%         % make a count figure
-%         subplot(6, ceil(n_phases/2), [n_phases+8  6*ceil(n_phases/2)])
-%         hold on
-%         he = errorbar(0, all_count_shuf_mean, 2*all_count_shuf_std, 'o','color', 'k','MarkerFaceColor', 'k', 'markersize', 10);
-%         
-%         for iPhase = 1:n_phases
-%             [~, this_phase_idx] = find(all_count(1,:)==iPhase); % get the index of values for this phase
-%             
-%             hold on
-%             he = errorbar(iPhase, nanmean(all_count(2,this_phase_idx), 2), 2*nanstd(all_count(2,this_phase_idx), 0,2), 'o', 'color', c_ord(iPhase,:),'MarkerFaceColor', c_ord(iPhase,:), 'markersize', 10);
-%             set(gca, 'fontsize', font_size);
-%             xlabel('Phase')
-%             xlim([-0.5 n_phases+0.5])
-%             ylabel('Spike count')
-%             set(gca, 'xticklabel', ['shuf' phase_labels])
-%         end
-%         
-%         SetFigure([], gcf)
-%         set(gcf, 'position', [440    37   930   761]);
-%         
-%         ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
-%         text(0.35, 0.98,[ExpKeys.subject '_' ExpKeys.date '  Cell ' cell_id], 'fontsize', font_size)
-%         saveas(gcf, [all_fig_dir ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency.png']);
-%         saveas_eps([ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency'], all_fig_dir)
-%         %
-%         close all
-%         %                 if strfind(f_list_label{iF}), '.')
+        %         % make a count figure
+        %         subplot(6, ceil(n_phases/2), [n_phases+8  6*ceil(n_phases/2)])
+        %         hold on
+        %         he = errorbar(0, all_count_shuf_mean, 2*all_count_shuf_std, 'o','color', 'k','MarkerFaceColor', 'k', 'markersize', 10);
+        %
+        %         for iPhase = 1:n_phases
+        %             [~, this_phase_idx] = find(all_count(1,:)==iPhase); % get the index of values for this phase
+        %
+        %             hold on
+        %             he = errorbar(iPhase, nanmean(all_count(2,this_phase_idx), 2), 2*nanstd(all_count(2,this_phase_idx), 0,2), 'o', 'color', c_ord(iPhase,:),'MarkerFaceColor', c_ord(iPhase,:), 'markersize', 10);
+        %             set(gca, 'fontsize', font_size);
+        %             xlabel('Phase')
+        %             xlim([-0.5 n_phases+0.5])
+        %             ylabel('Spike count')
+        %             set(gca, 'xticklabel', ['shuf' phase_labels])
+        %         end
+        %
+        %         SetFigure([], gcf)
+        %         set(gcf, 'position', [440    37   930   761]);
+        %
+        %         ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+        %         text(0.35, 0.98,[ExpKeys.subject '_' ExpKeys.date '  Cell ' cell_id], 'fontsize', font_size)
+        %         saveas(gcf, [all_fig_dir ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency.png']);
+        %         saveas_eps([ExpKeys.subject '_' ExpKeys.date '_' cell_id(1:end-3) '_f' num2str(floor(f_list{iF}(1))) '_' num2str(floor(f_list{iF}(2))) '_latency'], all_fig_dir)
+        %         %
+        %         close all
+        %         %                 if strfind(f_list_label{iF}), '.')
         freq_label = ['f_' strrep(strrep(f_list_label{iF}, ' ', ''), '-', '_')];
-%         %                 else
-%         
+        %         %                 else
+        %
         %                 end
         out.(cell_id).(freq_label).latency = all_lat;
         out.(cell_id).(freq_label).latency_shuf = temp_lat_shuf;
         out.(cell_id).(freq_label).count = all_count;
         out.(cell_id).(freq_label).resp = all_resp;
         out.(cell_id).(freq_label).resp_shuf = all_resp_shuf_mean;
-
-close all
+        
+        close all
     end % end freq loop
-        % put the cell info in here for later
+    % put the cell info in here for later
     out.(cell_id).ExpKeys = ExpKeys;
 end % end cell loop
 if exist('out', 'var')
-save([ all_lat_dir  ExpKeys.subject '_' ExpKeys.date '_lat.mat'], 'out', '-v7.3')
+    save([ all_lat_dir  ExpKeys.subject '_' ExpKeys.date '_lat.mat'], 'out', '-v7.3')
 end
 
 end % end of function
