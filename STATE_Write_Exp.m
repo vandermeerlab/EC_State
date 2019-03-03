@@ -17,7 +17,7 @@ end
 if isunix
     fname = strsplit(cd, '/');
 else
-    fname = strsplit(cd, '/');
+    fname = strsplit(cd, '\');
 end
 fname = fname{end}; 
 fname = fname(1:strfind(fname,'p')+1);
