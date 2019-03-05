@@ -25,7 +25,7 @@ good_sess_list = {'M13_2018_12_09',...
     'M17_2019_02_21'};
 
 This_list = {'M17_2019_02_15', 'M16_2019_02_17', 'M16_2019_02_23', 'M16_2019_02_25', 'M16_2019_02_27'};
-for iSess =34:length(sess_list); % made it to 30
+for iSess =33:length(sess_list); % made it to 30
     if iSess  == 32% || iSess = 9
         continue
     else
@@ -50,9 +50,9 @@ for iSess =34:length(sess_list); % made it to 30
             end
             
             % actually run the
-%             statedep_all_phase_sandbox; close all
+            statedep_all_phase_sandbox; close all
             statedep_latency_better; close all
-%             statedep_PETH_Phase
+            statedep_PETH_Phase
             close all
             cd(main_dir)
             

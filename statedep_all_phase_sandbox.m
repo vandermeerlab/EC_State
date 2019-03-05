@@ -26,7 +26,7 @@ else
     
 end
 
-mkdir(all_ccf_dir); mkdir(all_fig_dir);
+mkdir(all_ccf_dir); mkdir(all_fig_dir); mkdir([all_fig_dir '/CCFs'])
 %% defaults
 font_size = 18;
 % for naming figures;
@@ -47,17 +47,17 @@ Fs = 1 ./ median(diff(this_csc.tvec));
 
 %% make psd
 if Fs >=30000
-    wSize =  16384;
+    wSize =  32768;%16384;
 else
     wSize = 1024;
 end
 
-[Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/2, [], Fs);
+[Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/8, [], Fs);
     %% look at the psd
     figure(3)
     subplot(333);
     plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
-    set(gca, 'XLim', [0 150], 'FontSize', font_size); grid on;
+    set(gca, 'XLim', [0 100], 'FontSize', font_size); grid on;
     xlabel('Frequency (Hz)');
     title(this_csc.label{1},'fontsize', font_size);
     
@@ -389,6 +389,7 @@ for iC = 1:length(S.label)
     set(gcf, 'position', [600 50 640*2 420*2]);
     %     saveas(gcf, [fname '_' cell_id '_ccf.png']);
     saveas(gcf, [all_fig_dir fname '_' cell_id '_ccf.png']);
+    saveas(gcf, [all_fig_dir '/CCFs/' fname '_' cell_id '_ccf.png']);
     %     saveas_eps([fname '_' cell_id '_ccf'], cd)
     saveas_eps([fname '_' cell_id '_ccf'], all_fig_dir)
     
@@ -401,6 +402,7 @@ for iC = 1:length(S.label)
     set(gcf, 'position', [600 50 640*2 420*2]);
     %     saveas(gcf, [fname '_' cell_id '_both.png']);
     saveas(gcf, [all_fig_dir fname '_' cell_id '_both.png']);
+
     %     saveas_eps([fname '_' cell_id '_both'], cd)
     saveas_eps([fname '_' cell_id '_both'], all_fig_dir)
     

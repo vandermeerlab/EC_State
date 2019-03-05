@@ -62,9 +62,11 @@ for iSess = 1:length(sess_list)
 end
 
 %%
+nShuf = 1000;
 cell_list = fieldnames(all_cells);
 all_lat =[];
 all_count = [];
+all_resp_ratio = [];
 for iC = 1:length(cell_list)
     this_cell = cell_list{iC};
     f_list = fieldnames(all_cells.(this_cell));
@@ -74,6 +76,35 @@ for iC = 1:length(cell_list)
             continue
         else
                 x_phase_resp(iC, iF) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,:));
+                
+                
+                %% get the shuffle for the response max-min
+                for iShuf = 1:nShuf
+                    this_shuf = [];
+                    mix = randperm(length(all_cells.(this_cell).(f_list{iF}).latency(1,:)));
+                    this_shuf(1,:) = all_cells.(this_cell).(f_list{iF}).latency(1,mix);
+                    
+                    for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:))
+                        this_phase_idx = find(this_shuf(1,:) == iPhase);
+                        this_phase_mean(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+                    end
+                    all_shuf_ratio(iShuf) = max(this_phase_mean)/min(this_phase_mean); 
+                    % check for inf from shuffle
+                       all_shuf_ratio(isinf(all_shuf_ratio)) = NaN;
+   
+                    
+                end
+                % get the phase response averages
+                for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:))
+                    this_phase_idx = find(all_cells.(this_cell).(f_list{iF}).latency(1,:) == iPhase);
+                    this_resp(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+                end
+                %
+                all_resp_ratio(iC, iF) = ((max(this_resp)/min(this_resp)) - nanmean(all_shuf_ratio))/nanstd(all_shuf_ratio); 
+                if isnan(all_resp_ratio(iC, iF))
+                    disp([num2str(iC), 'f' num2str(iF)])
+                end
+                %%
 
             for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:)) % get the phase segment numbers (should be 1:5 if phase split by 5
                % labels for x axes
@@ -132,7 +163,7 @@ all_count_sort = all_count(depth_ord,:,:);
 
 for ii =1:length(depth_sort)
     
-    labels{ii} = strcat(num2str(depth_sort(ii)), '_m_m ', num2str(floor(x_phase_resp_sort(ii)*100)), '%');
+    labels{ii} = strcat( num2str(floor(x_phase_resp_sort(ii)*100)), '%'); %num2str(depth_sort(ii)), '_m_m ',
 
 end
 
@@ -369,7 +400,7 @@ for iF = 1:length(f_list)
     sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
     temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
     temp_all_resp_v_shuf(sig_cells==0)=NaN;
-    add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
+%     add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
 end
 SetFigure([], gcf)
 set(gcf, 'position', [282   50  1200  720])
@@ -385,25 +416,25 @@ saveas_eps('Summary_resp_v_shuf', summary_dir)
 
 % x_phase_resp should be the same across f_list since it is the number of
 % responses and doesn't care about phase or freq.
-f_cor = linspecer(size(all_resp,3))
+f_cor = linspecer(size(all_resp_ratio,2));
 figure(9)
-for iC =1:size(all_resp,1)
-    for iF = 1:size(all_resp,3)
-% get max phase
-% norm to lowest
-
-[max_val, max_idx] = max(all_resp_v_shuf(iC,:,iF))%./min(all_resp_v_shuf(iC,:,iF)));
-
-% get min phase
-[min_val, min_idx] = min(all_resp_v_shuf(iC,:,iF));
-
-
-% get ratio
-resp_ratio(iC,iF) = abs(max_val-min_val); 
-        freq_colors{iC, iF} = f_cor(iF,:);
+for iC =1:size(all_resp_ratio,1)
+    for iF = 1:size(all_resp_ratio,2)
+% % get max phase
+% % norm to lowest
+% 
+% [max_val, max_idx] = max(all_resp_v_shuf(iC,:,iF))%./min(all_resp_v_shuf(iC,:,iF)));
+% 
+% % get min phase
+% [min_val, min_idx] = min(all_resp_v_shuf(iC,:,iF));
+% 
+% 
+% % get ratio
+% resp_ratio(iC,iF) = abs(max_val-min_val); 
+        freq_colors{iC,iF} = f_cor(iF,:);
     end
 end
-resp_ratio_1d = reshape(abs(resp_ratio), 1, numel(resp_ratio));
+resp_ratio_1d = reshape(all_resp_ratio, 1, numel(all_resp_ratio));
 resp_all_1d = reshape(x_phase_resp_sort, 1, numel(x_phase_resp));
 freq_colors_1d = reshape(freq_colors,1, numel(freq_colors));
 
@@ -414,18 +445,22 @@ hold on
     scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
 end
 xlabel('p(spike|stim)')
-ylabel('zscore diff (max phase - min phase)')
+ylabel('zscore response (max phase/min phase)')
 %ylabel('ratio of max phase / min phase response')
-h = zeros(size(all_resp,3), 1);
-for iF = 1:size(all_resp,3)
+h = zeros(size(all_resp_ratio,2), 1);
+for iF = 1:size(all_resp_ratio,2)
 h(iF) = plot(NaN,NaN,'o', 'color', f_cor(iF, :), 'MarkerFaceColor', f_cor(iF,:));
 end
-legend(h, leg_freq);
+lgd = legend(h, leg_freq, 'location', 'NorthEastOutside');
 legend('boxoff')
+lgd.FontSize = 18;
 % legend(leg_freq)
-% xlim([.25 .75])
-% ylim([1 3])
+xlim([.2 .7])
+ylim([-1 4])
+line([0 0.7], [1.96, 1.96], 'color', [0.3 0.3 0.3])
 
 SetFigure([], gcf)
 saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
 saveas_eps('Summary_resp_ratio', summary_dir)
+
+%% make a table of responsive cells and which frequencies
