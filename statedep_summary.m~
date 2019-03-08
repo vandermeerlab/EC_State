@@ -192,7 +192,6 @@ for iC = length(x_phase_resp_sort):-1:1
         all_count_sort(iC,:,:) = [];
         all_resp_ratio_sort(iC,:,:) = [];
         x_phase_resp_sort(iC,:,:) = [];
-        freq_vals(iC,:) = [];
         labels{iC} = [];
 %         all_sess_id_sort{iC} = [];
         depth_sort(iC) = [];
@@ -257,17 +256,19 @@ for iC =1:size(all_resp_ratio_sort,1)
         % resp_ratio(iC,iF) = abs(max_val-min_val);
         freq_colors{iC,iF} = f_cor(iF,:);
         freq(iC, iF) = iF;
-            cell_id(iC,iF) = iC; 
+%             cell_id(iC,iF) = iC; 
     end
 end
 resp_ratio_1d = reshape(all_resp_ratio_sort, 1, numel(all_resp_ratio_sort));
 resp_all_1d = reshape(x_phase_resp_sort, 1, numel(x_phase_resp_sort));
 freq_colors_1d = reshape(freq_colors,1, numel(freq_colors));
-freq_id_1d = reshape(freq_vals,1, numel(freq_vals));
+freq_id_1d = reshape(freq,1, numel(freq));
 depth_all_1d = reshape(repmat(depth_sort',1,size(x_phase_resp_sort,2)), 1, numel(x_phase_resp_sort));
-cell_id_1d = reshape(cell_id,1, numel(cell_id));
+% cell_id_1d = reshape(cell_id,1, numel(cell_id));
 
 % generate figure
+% subplot(2,1,1)
+%     scatter(resp_all_1d, resp_ratio_1d,100,'k', 'filled')
 for iC = 1:length(resp_all_1d)
     hold on
     if depth_all_1d(iC) >3.5
@@ -287,6 +288,25 @@ lgd = legend(h, leg_freq, 'location', 'NorthEastOutside');
 legend('boxoff')
 lgd.FontSize = 18;
 
+%make second axes
+% hAx(1) = axes();
+% 
+% hAx(2) = copyobj(hAx(1),gcf);
+% delete( get(hAx(2),'Children') )            %# delete its children
+% hLine(1) = plot(NaN,NaN,'d', 'color', 'k', 'MarkerFaceColor', 'k', 'Parent',hAx(2));
+% hLine(2) = plot(NaN,NaN,'o', 'color', 'k', 'MarkerFaceColor', 'k', 'Parent',hAx(2));
+% 
+% set(hAx(2), 'Color','none', 'XTick',[], ...
+%     'YAxisLocation','right', 'Box','off')  
+% legend(hLine, {'dStr', 'vStr'}, 'Location','NorthWest', 'Color','w')
+% 
+% %     h2(1) = plot(NaN,NaN,'d', 'color', 'k', 'MarkerFaceColor', 'k','Parent',hAx(2));
+% %         h2(2) = plot(NaN,NaN,'o', 'color', 'k', 'MarkerFaceColor', 'k','Parent',hAx(2));
+
+% lgd = legend(a, {'dStr', 'vStr'}, 'location', 'EastOutside');
+% legend('boxoff')
+% lgd.FontSize = 18;
+% legend(leg_freq)
 xlim([0.2 .7])
 ylim([-2 4])
 line([0 0.7], [1.96, 1.96], 'color', [0.3 0.3 0.3])
