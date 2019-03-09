@@ -50,7 +50,7 @@ for iSess =34:length(sess_list); % made it to 30
             end
             
             % actually run the
-%             statedep_all_phase_sandbox; close all
+            statedep_all_phase_sandbox; close all
             statedep_latency_better; close all
 %             statedep_PETH_Phase
             close all

@@ -101,9 +101,19 @@ this_spk_binned(idx) = 1;
 [xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
 tvec = tvec ./ Fs;
 
-figure(101)
-plot(tvec, xc, 'k', 'LineWidth', 2);
+for iShuf = 1:10
+    this_stim_binned = zeros(size(this_csc.tvec));
+idx_shuf = round((max(idx)-min(idx)).*rand(length(idx),1) + min(idx));
+this_spk_binned(idx_shuf) = 1;
+[xc_shuf(iShuf,:), tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+    
+end
 
+
+figure(102)
+plot(tvec, xc, 'k', 'LineWidth', 2);
+hold on
+plot(tvec, nanmean(xc_shuf,1), '--')
 
 %% load spikes
 cfg = []; cfg.getTTnumbers = 0;

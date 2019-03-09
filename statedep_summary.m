@@ -292,9 +292,19 @@ ylim([-2 4])
 line([0 0.7], [1.96, 1.96], 'color', [0.3 0.3 0.3])
 
 SetFigure([], gcf)
-% saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
-% saveas_eps('Summary_resp_ratio', summary_dir)
+saveas(gcf, [summary_dir 'Summary_resp_ratio.png']);
+saveas_eps('Summary_resp_ratio', summary_dir)
 
+% extra legend figure
+figure(111)
+hold on
+    h(1) = plot(NaN,NaN,'o', 'color', 'k', 'MarkerFaceColor', 'k');
+    h(2) = plot(NaN,NaN,'d', 'color', 'k', 'MarkerFaceColor', 'k');
+axis off
+lgd = legend({'dStr', 'vStr'});
+legend('boxoff')
+lgd.FontSize = 18;
+saveas_eps('Summary_Str_legend', summary_dir)
 %% make a table of responsive cells and which frequencies
 Keep_idx = resp_all_1d >0.2; 
 
