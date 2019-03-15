@@ -323,8 +323,7 @@ for iC = 1:length(keep_resp_all_1d)
 end
 
 fprintf('\n')
-fprintf('Depths')
-depth_sort
+
 %%
 
 % %% make a table of responsive cells, where they are, subject ID, ....
