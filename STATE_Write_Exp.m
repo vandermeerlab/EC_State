@@ -2,7 +2,7 @@ function STATE_Write_Exp(data_dir)
 %% this will create an expkeys file by taking the information from the data files and putting it into an exicutable script
 %
 % put the path to the data folder as the input.  Or run it without an input
-% while in the data folder.  
+% while in the data folder.
 
 
 %% initialize
@@ -19,7 +19,7 @@ if isunix
 else
     fname = strsplit(cd, '\');
 end
-fname = fname{end}; 
+fname = fname{end};
 fname = fname(1:strfind(fname,'p')+1);
 fname = strrep(fname, '-', '_');
 
@@ -56,10 +56,16 @@ fprintf(fid, 'ExpKeys.genetics = ''PV-Cre:Ai32'';\n');
 fprintf(fid, ['ExpKeys.date = ''' date_id ''';\n']);
 fprintf(fid, ['ExpKeys.session_number = ''NaN'';\n']);
 fprintf(fid, ['ExpKeys.tetrodeDepths = ' num2str(depth) ';\n']);
-fprintf(fid, 'ExpKeys.goodCSC = ''CSC22.ncs''; %%this channel was referenced to the skull wire, while all others were locally referenced to optimize spikes\n');
+if strcmp(subject_id, 'M18') || strcmp(subject_id, 'M19')
+    fprintf(fid, 'ExpKeys.goodCSC = ''CSC31.ncs''; %%this channel was referenced to the skull wire, while all others were locally referenced to optimize spikes\n');
+    fprintf(fid, 'ExpKeys.goodCSC2 = ''CSC1.ncs''; %%this channel was referenced to the skull wire, while all others were locally referenced to optimize spikes\n');
+    
+else
+    fprintf(fid, 'ExpKeys.goodCSC = ''CSC22.ncs''; %%this channel was referenced to the skull wire, while all others were locally referenced to optimize spikes\n');
+end
 fprintf(fid, 'ExpKeys.quality = ''NaN''; %%0 is poor, 1 means cell faded, 2 means ok, 3 means great!, NaN means not yet filled in\n');
 
-% to determine hemisphere based on mouse and date of switch. 
+% to determine hemisphere based on mouse and date of switch.
 if strcmp(subject_id, 'M13') && datetime(strrep(date_id, '_', '-'), 'format', 'yyyy-MM-dd') > datetime('2018-12-14', 'format', 'yyyy-MM-dd');
     fprintf(fid, 'ExpKeys.hemisphere = ''L'';\n');
 elseif strcmp(subject_id, 'M14') && datetime(strrep(date_id, '_', '-'), 'format', 'yyyy-MM-dd') > datetime('2018-12-03', 'format', 'yyyy-MM-dd');
@@ -89,27 +95,28 @@ fprintf(fid, 'ExpKeys.fibre_NA = %.2f ;%% \n', 0.39);
 %% experimental variables: NLX digital I/O
 fprintf(fid, '\n%%NLX digital I/O codes\n');
 
-if strcmp(subject_id, 'M16') || strcmp(subject_id, 'M17'); % different ids for variabel stim ISI version
-fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0002).''; %% when the 1ms laser came on \n');
-fprintf(fid, 'ExpKeys.var_trig = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0004).''; %% when the 1ms laser came on \n');
-fprintf(fid, 'ExpKeys.wide_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0010).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
-fprintf(fid, 'ExpKeys.stim_mode = ''variable ISI''; %% if fixed then just used ISI, if variable then ISI is between 0-1500ms \n');
-fprintf(fid, 'ExpKeys.ISI = %.2f ;%% \n', 2);
-fprintf(fid, 'ExpKeys.stim_ran_range = [%.2f %.2f];%% \n', 0, 1500);
-
-
+if strcmp(subject_id, 'M16') || strcmp(subject_id, 'M17') || strcmp(subject_id, 'M18') || strcmp(subject_id, 'M19')% different ids for variabel stim ISI version
+    fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0002).''; %% when the 1ms laser came on \n');
+    fprintf(fid, 'ExpKeys.var_trig = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0004).''; %% when the 1ms laser came on \n');
+    fprintf(fid, 'ExpKeys.wide_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0010).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
+    fprintf(fid, 'ExpKeys.short_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0008).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
+    fprintf(fid, 'ExpKeys.stim_mode = ''variable ISI''; %% if fixed then just used ISI, if variable then ISI is between 0-1500ms \n');
+    fprintf(fid, 'ExpKeys.ISI = %.2f ;%% \n', 2);
+    fprintf(fid, 'ExpKeys.stim_ran_range = [%.2f %.2f];%% \n', 0, 1500);
+    
+    
 else
-fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x000A).''; %% when the 1ms laser came on \n');
-fprintf(fid, 'ExpKeys.wide_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0012).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
-fprintf(fid, 'ExpKeys.stim_mode = ''fixed ISI''; %% if fixed then just used ISI, if variable then ISI is between 0-1500ms \n');
-fprintf(fid, 'ExpKeys.ISI = %.2f ;%% \n', 3);
-fprintf(fid, 'ExpKeys.stim_ran_range = %.2f ;%% \n', 0);
+    fprintf(fid, 'ExpKeys.laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x000A).''; %% when the 1ms laser came on \n');
+    fprintf(fid, 'ExpKeys.wide_laser_on = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0012).''; %% when the 50ms laser came on.  Only used in verfication recordings at the end of the session.\n');
+    fprintf(fid, 'ExpKeys.stim_mode = ''fixed ISI''; %% if fixed then just used ISI, if variable then ISI is between 0-1500ms \n');
+    fprintf(fid, 'ExpKeys.ISI = %.2f ;%% \n', 3);
+    fprintf(fid, 'ExpKeys.stim_ran_range = %.2f ;%% \n', 0);
 end
 
 fprintf(fid, 'ExpKeys.event_off = ''TTL Input on AcqSystem1_0 board 0 port 2 value (0x0000).''; %% off signal for all events\n');
 
 
-%% experimental timing variables;  Used to get the time of the main recording only at this time. 
+%% experimental timing variables;  Used to get the time of the main recording only at this time.
 fprintf(fid, '\n%%Timing\n');
 
 % find the main wheel section which will be the longest.
@@ -129,7 +136,7 @@ fprintf(fid, 'ExpKeys.timeOffWheel = %.4d;\n',Evt.t{2}(main_rec_idx) );
 
 fprintf(fid, 'ExpKeys.PreRecord = [%.4d %.4d];\n',Evt.t{1}(1),Evt.t{2}(1));
 if length(Evt.t{2}) > main_rec_idx
-fprintf(fid, 'ExpKeys.PostRecord = [%.4d %.4d];\n',Evt.t{1}(main_rec_idx+1),Evt.t{2}(main_rec_idx+1));
+    fprintf(fid, 'ExpKeys.PostRecord = [%.4d %.4d];\n',Evt.t{1}(main_rec_idx+1),Evt.t{2}(main_rec_idx+1));
 else
     fprintf(fid, 'ExpKeys.PostRecord = NaN;\n');
 end
