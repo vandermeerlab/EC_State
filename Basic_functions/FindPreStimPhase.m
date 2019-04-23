@@ -12,6 +12,10 @@ cfg_def.debug = 0;
 cfg_def.pad = []; % pad trials before filtering; if non-empty, use this number of points on either end of signal
 cfg_def.order = 4;
 cfg_def.method = 'cicone'; % phase estimation method: 'cicone' or 'hilbert'
+% addtion
+cfg_def.filter_in = []; % is a prebuilt filter is specifed.  
+cfg_def.filter_dir = cd; % place to save built filters
+
 
 cfg = ProcessConfig(cfg_def, cfg_in);
 
@@ -23,11 +27,19 @@ trials = iv(tstart, tend);
 % set up filter
 fprintf('Creating filter...\n');
 
-Fs = 1 ./ median(diff(csc_in.tvec));
+% Fs = 1 ./ median(diff(csc_in.tvec));
+Fs = csc_in.cfg.hdr{1}.SamplingFrequency;
+
+if ~isfield(cfg, 'filter_in') || isempty(cfg.filter_in) 
 
 d = fdesign.bandpass(cfg.fstop(1), cfg.fpass(1), cfg.fpass(2), cfg.fstop(2), cfg.att, cfg.ripple, cfg.att, Fs);
 flt = design(d, 'equiripple'); % equiripple method (FIR) gives linear phase delay
 
+save([cfg.filter_dir 'Filt_' num2str(round(cfg.fpass(1))) '_' num2str(round(cfg.fpass(2))) '_Fs_' num2str(Fs) '.mat'], 'flt', '-v7.3')
+else
+    flt = cfg.filter_in;
+
+end
 if cfg.debug
    fvtool(flt);
    pause;

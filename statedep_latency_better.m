@@ -28,17 +28,17 @@ end
 global PARAMS
 %%
 %expkeys duplicate check
-            these_files = dir;
-            for iF = 1:length(these_files)
-                if length(these_files(iF).name) <=2
-                    continue
-                else
-                    if strcmp(these_files(iF).name(1:2), '._')
-                        delete(these_files(iF).name)
-                    end
-                end
-            end
-            %%
+these_files = dir;
+for iF = 1:length(these_files)
+    if length(these_files(iF).name) <=2
+        continue
+    else
+        if strcmp(these_files(iF).name(1:2), '._')
+            delete(these_files(iF).name)
+        end
+    end
+end
+%%
 
 mkdir(all_lat_dir); mkdir(all_fig_dir);
 %% defaults
@@ -53,8 +53,20 @@ cfg_def.baseline_cor = 'on';
 cfg = [];
 %cfg.decimateByFactor = 30;
 cfg.fc = {ExpKeys.goodCSC};
+% cfg.decimateByFactor = 16;
+
 this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
+
+if this_csc.cfg.hdr{1}.SamplingFrequency >2000;
+    cfg = [];
+    
+    d_fac = this_csc.cfg.hdr{1}.SamplingFrequency/2000;
+    cfg.decimateByFactor = d_fac; % get it to 2000Hz
+    
+    cfg.fc = {ExpKeys.goodCSC};    
+    this_csc = LoadCSC(cfg);
+end
 
 %% load events
 cfg = [];
@@ -78,7 +90,7 @@ disp(['Longest Recording interval is ' num2str(duration/60) ' minutes in recordi
 laser_on = restrict(laser_on, start_stop.t{1}(main_rec_idx), start_stop.t{2}(main_rec_idx));
 
 % check number of pulses.
-if length(laser_on.t{1}) ~= 1000 && length(laser_on.t{1}) ~= 600
+if length(laser_on.t{1}) ~= 1000 && length(laser_on.t{1}) ~= 600 && length(laser_on.t{1}) ~= 1500
     warning('Wrong number of laser pulses. %0.2f when it should be 1000 or in early sessions 600',length(laser_on.t{1}))
     
 end
@@ -95,29 +107,66 @@ for iC = 1:length(S.label)
     cell_id = this_S.label{1}(1:end-2);
     cell_id = strrep(cell_id, '_SS', '');
     
-    if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], PARAMS.Good_cells) % don't bother processing artifacts
-        continue
+    % check if this is a 'good cell' and not an artifact or non-light mod
+    % cell
+    if ~ismember(this_S.label, ExpKeys.goodCell)
+    continue
     end
+    
+%     if strcmpi(this_S.label{1}(end-4:end-2), 'Art')  || ~ismember([ExpKeys.subject '_' ExpKeys.date '_' cell_id], PARAMS.Good_cells) % don't bother processing artifacts
+%         continue
+%     end
     
     
     %% get some LFP phases (filtfilt)
     f_list = {[3 5], [7 10],[15 25], [30 40],[40 60], [60 80]};
     f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
+    fstop_list = {[2.5 5.5], [5.5 10.5],[14 26], [28 42],[38 62], [55 85]};
+
     nShuf = 100;
     
     for iF = 1:length(f_list) % loop across freqs
-        %%  filter & hilbertize
-        cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
-        csc_f = FilterLFP(cfg_filt, this_csc);
+        %  filter & hilbertize
+                cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
+                csc_f = FilterLFP(cfg_filt, this_csc);
         
-        % get the phase
-        csc_f.data = angle(hilbert(csc_f.data));
+                csc_f.data_amp = abs(hilbert(csc_f.data));
+                
+                % get the phase
+                csc_f.data = angle(hilbert(csc_f.data));
+                
+                % get the amplitude
+                
         
-        % get phase for each laser stim (actual)
-        stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_f.tvec);
-        stim_phase = csc_f.data(stim_phase_idx);
-        
-        
+                % get phase for each laser stim (actual)
+                stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_f.tvec);
+                stim_phase = csc_f.data(stim_phase_idx);
+                % get the amp for each laser stim
+                stim_amp = csc_f.data_amp(stim_phase_idx);
+                
+                
+%         cfg_filt = [];
+%         cfg_filt.fpass = f_list{iF};
+%         cfg_filt.fstop = fstop_list{iF};
+%         cfg_filt.debug = 0;
+%         cfg_filt.filtfilt = 0;
+%         cfg_filt.pad = [];
+%         cfg_filt.filter_dir = PARAMS.filter_dir; % where to put built filters
+%         if length(laser_on.t{1}) < 1500
+%             cfg_filt.isi = 3;
+%         else
+%             cfg_filt.isi = 2;
+%             
+%         end
+%         % find any prebuilt filters
+%         if exist([PARAMS.filter_dir 'Filt_' num2str(round(f_list{iF}(1))) '_' num2str(round(f_list{iF}(2))) '_Fs_' num2str(this_csc.cfg.hdr{1}.SamplingFrequency) '.mat'], 'file')
+%             load([PARAMS.filter_dir 'Filt_' num2str(round(f_list{iF}(1))) '_' num2str(round(f_list{iF}(2))) '_Fs_' num2str(this_csc.cfg.hdr{1}.SamplingFrequency) '.mat']);
+%             cfg_filt.filter_in = flt;
+%         else
+%             cfg_filt.filter_in = [];
+%         end
+%         
+%         stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
         % convert to histogram of spikes relative to laser onset (based on ccf function by MvdM
         cfg_ccf =[];
         cfg_ccf.smooth = 0; % get raw values
@@ -138,9 +187,16 @@ for iC = 1:length(S.label)
         all_lat_shuf =  NaN(2, length(laser_on.t{1}),nShuf);
         all_count = NaN(2,length(laser_on.t{1}));
         all_count_shuf = NaN(2,length(laser_on.t{1}), nShuf);
-        all_phase_labels = NaN(1,length(laser_on.t{1}));
+        all_phase_vals = NaN(1,length(laser_on.t{1}));
         all_resp = NaN(2, length(laser_on.t{1}));
         all_resp_shuf = NaN(2,length(laser_on.t{1}), nShuf);
+        all_amp =  NaN(2, length(laser_on.t{1})); % get the phase at each stim
+        
+        % track the amplitude at each stim
+        all_amp(2, :) = stim_amp; % get the amplitude at each stim for the given frequency
+
+        % get the raw phase value for each stim
+        all_phase_vals = stim_phase;
         
         % Get the phase labels
         for iPhase = 1:n_phases
@@ -150,8 +206,11 @@ for iC = 1:length(S.label)
             all_lat_shuf(1,this_phase_idx) = iPhase;
             all_count(1,this_phase_idx) = iPhase;
             all_count_shuf(1,this_phase_idx) = iPhase;
-            
+            all_amp(1,this_phase_idx) = iPhase;
+
         end
+        
+
         
         % get the latencies
         [~, cell_idx] = ismember(this_S.label, ExpKeys.goodCell);
@@ -348,7 +407,10 @@ for iC = 1:length(S.label)
         out.(cell_id).(freq_label).count = all_count;
         out.(cell_id).(freq_label).resp = all_resp;
         out.(cell_id).(freq_label).resp_shuf = all_resp_shuf_mean;
-        
+        out.(cell_id).(freq_label).amp = all_amp;
+        out.(cell_id).(freq_label).phase_vals = all_phase_vals;
+
+
         close all
     end % end freq loop
     % put the cell info in here for later

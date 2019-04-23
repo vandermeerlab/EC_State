@@ -1,9 +1,9 @@
 function statedep_all_phase_sandbox
 % restoredefaultpath;
-
+global PARAMS
 if isunix
     addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
-    addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
+    addpath('/Users/jericcarmichael/Documents/GitHub/EC_State/Basic_functions');
     
     all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
     all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf/';
@@ -38,12 +38,27 @@ end
 fname = fname{end};
 fname = fname(1:strfind(fname,'p')+1);
 fname = strrep(fname, '-', '_');
+
+%% load expkeys
+LoadExpKeys
 %% load CSC
 cfg = [];
 %cfg.decimateByFactor = 30;
-cfg.fc = {'CSC22.ncs'};
+cfg.fc = {ExpKeys.goodCSC};
+% cfg.decimateByFactor = 16;
+
 this_csc = LoadCSC(cfg);
 Fs = 1 ./ median(diff(this_csc.tvec));
+
+if this_csc.cfg.hdr{1}.SamplingFrequency >2000;
+    cfg = [];
+    
+    d_fac = this_csc.cfg.hdr{1}.SamplingFrequency/2000;
+    cfg.decimateByFactor = d_fac; % get it to 2000Hz
+    
+    cfg.fc = {ExpKeys.goodCSC};    
+    this_csc = LoadCSC(cfg);
+end
 
 %% make psd
 if Fs >=30000
@@ -53,16 +68,15 @@ else
 end
 
 [Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/8, [], Fs);
-    %% look at the psd
-    figure(3)
-    subplot(333);
-    plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
-    set(gca, 'XLim', [0 100], 'FontSize', font_size); grid on;
-    xlabel('Frequency (Hz)');
-    title(this_csc.label{1},'fontsize', font_size);
-    
-%% load expkeys
-LoadExpKeys
+%% look at the psd
+figure(3)
+subplot(333);
+plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
+set(gca, 'XLim', [0 100], 'FontSize', font_size); grid on;
+xlabel('Frequency (Hz)');
+title(this_csc.label{1},'fontsize', font_size);
+
+%%
 
 cfg = [];
 cfg.eventList = {ExpKeys.laser_on};
@@ -100,16 +114,16 @@ this_csc = restrict(this_csc, start_stop.t{1}(main_rec_idx), start_stop.t{2}(mai
 % this_spk_binned(idx) = 1;
 % [xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
 % tvec = tvec ./ Fs;
-% 
+%
 % for iShuf = 1:30
 %     this_stim_binned = zeros(size(this_csc.tvec));
 % idx_shuf = round((max(idx)-min(idx)).*rand(length(idx),1) + min(idx));
 % this_spk_binned(idx_shuf) = 1;
 % [xc_shuf(iShuf,:), ~] = xcorr(this_csc.data, this_spk_binned, 500);
-%     
+%
 % end
-% 
-% 
+%
+%
 % figure(102)
 % plot(tvec, xc, 'k', 'LineWidth', 2);
 % hold on
@@ -121,7 +135,7 @@ this_csc = restrict(this_csc, start_stop.t{1}(main_rec_idx), start_stop.t{2}(mai
 %    these_stims(iE,:) = data_temp.data;
 %    clear data_temp
 % end
-% 
+%
 % for iShuf = 1:25
 %     shuf_idx = round((max(laser_on.t{1})-min(laser_on.t{1})).*rand(10000,1) + min(laser_on.t{1}));
 %     for iE = 1:length(shuf_idx)
@@ -131,7 +145,7 @@ this_csc = restrict(this_csc, start_stop.t{1}(main_rec_idx), start_stop.t{2}(mai
 %     end
 % end
 % % convert shuf into 2d
-% 
+%
 % these_stims_shuf_reshape = reshape(permute(these_stims_shuf,[1 3 2]),[],size(these_stims_shuf,2),1);
 %     %%
 % figure(103)
@@ -189,17 +203,36 @@ for iC = 1:length(S.label)
     set(h, 'Interpreter', 'none');
     set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('spike count');
     
-
+    
     %% get some LFP phases (filtfilt)
     f_list = {[3 5], [6.5 9.5],[15 25], [30 40],[40 60], [60 80]};
+    fstop_list = {[2.5 5.5], [5.5 10.5],[14 26], [28 42],[38 62], [55 85]};
+    
     f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
     nShuf = 100;
     sub4_id = 1; % allows for colum looping in Fig 4
     
     for iF = 1:length(f_list) % loop across freqs
+%         if f_list{iF}(2) < 30
+%             cfg = [];
+%             cfg.fc = {'CSC22.ncs'};
+%             d_fac = this_csc.cfg.hdr{1}.SamplingFrequency/2000;
+%             cfg.decimateByFactor = d_fac; % get it to 2000Hz
+%             
+%             this_csc = LoadCSC(cfg);
+%             Fs = 1 ./ median(diff(this_csc.tvec));
+%         else
+%             cfg = [];
+%             cfg.fc = {'CSC22.ncs'};
+%             %             cfg.decimateByFactor = 16; % get it to 2000Hz
+%             
+%             this_csc = LoadCSC(cfg);
+%             Fs = 1 ./ median(diff(this_csc.tvec));
+%             
+%         end
         %%  filter & hilbertize
-        cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
-        csc_f = FilterLFP(cfg_filt, this_csc);
+                cfg_filt = []; cfg_filt.type = 'fdesign'; cfg_filt.f  = f_list{iF};
+                csc_f = FilterLFP(cfg_filt, this_csc);
         
         
         %         %% overall PETH
@@ -217,12 +250,33 @@ for iC = 1:length(S.label)
         
         
         %% SHUFFLE WOULD DO SOME KIND OF RANDOM CIRCSHIFT HERE %%%
+        cfg_filt = [];
+        cfg_filt.fpass = f_list{iF};
+        cfg_filt.fstop = fstop_list{iF};
+        cfg_filt.debug = 0;
+        cfg_filt.filtfilt = 0;
+        cfg_filt.pad = [];
+        cfg_filt.filter_dir = PARAMS.filter_dir; % where to put built filters
+        if length(laser_on.t{1}) < 1500
+            cfg_filt.isi = 3;
+        else
+            cfg_filt.isi = 2;
+            
+        end
+        % find any prebuilt filters
+        if exist([PARAMS.filter_dir 'Filt_' num2str(round(f_list{iF}(1))) '_' num2str(round(f_list{iF}(2))) '_Fs_' num2str(this_csc.cfg.hdr{1}.SamplingFrequency) '.mat'], 'file')
+            load([PARAMS.filter_dir 'Filt_' num2str(round(f_list{iF}(1))) '_' num2str(round(f_list{iF}(2))) '_Fs_' num2str(this_csc.cfg.hdr{1}.SamplingFrequency) '.mat']);
+            cfg_filt.filter_in = flt;
+        else
+            cfg_filt.filter_in = [];
+        end
         
-        csc_f.data = angle(hilbert(csc_f.data));
+        stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
+        %         csc_f.data = angle(hilbert(csc_f.data));
         hold on
         for iS = nShuf:-1:1
             
-            csc_shuf = csc_f;
+            csc_shuf = this_csc;
             if strcmp(version('-release'), '2014b') % version differences in how circshift is handled.
                 csc_shuf.data = circshift(csc_shuf.data, round(rand(1) .* 0.5*length(csc_shuf.data)), 2);
             else
@@ -233,8 +287,8 @@ for iC = 1:length(S.label)
         end % of shuffles
         
         % get phase for each laser stim (actual)
-        stim_phase_idx = nearest_idx3(laser_on.t{1}, csc_f.tvec);
-        stim_phase = csc_f.data(stim_phase_idx);
+        %         stim_phase_idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+        %         stim_phase = this_csc.data(stim_phase_idx);
         
         % STIM PHASE HISTO THIS IS IMPORTANT
         figure(2); subplot(2, 3, iF);
@@ -298,27 +352,30 @@ for iC = 1:length(S.label)
         figure(111)
         subplot(ceil(length(f_list)/2),2, iF);
         for iPhase = 1:length(edges)-1
-%             h(3)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
-%             h(4)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) + 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
-%             h(5) = plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) - 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
-                         h(1) = plot(tvec, all_ccf(iPhase,:), '-', 'color', c_ord(iPhase,:), 'LineWidth', 1); hold on;
-
+            %             h(3)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+            %             h(4)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) + 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+            %             h(5) = plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) - 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
+            h(1) = plot(tvec, all_ccf(iPhase,:), '-', 'color', c_ord(iPhase,:), 'LineWidth', 1); hold on;
+            
             max_val(iPhase) = max(all_ccf(iPhase,:));
-            max_shuf_val(iPhase) = max(nanmean(all_ccf_shuf(iPhase,:,:),3));
+%             max_shuf_val(iPhase) = max(nanmean(all_ccf_shuf(iPhase,:,:),3));
+                min_val(iPhase) = min(all_ccf(iPhase,:));
+
             
         end
-         set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('stimulus-response xcorr');
+        set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('stimulus-response xcorr');
         title(sprintf('5-phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)), 'fontsize', font_size);
         % get a zoom in
         [~, max_idx] = max(diff(all_ccf(iPhase,:)));
-%         xlim([tvec(max_idx)-0.0005 tvec(max_idx)+0.002]);
+        %         xlim([tvec(max_idx)-0.0005 tvec(max_idx)+0.002]);
         val_max = max(max_val);
-%         ylim([val_max-0.1 val_max+0.02])
-SetFigure([], gcf)
-    set(gcf, 'position', [600 50 640*2 420*2]);
+                val_min = min(max_val);
+        %         ylim([val_max-0.1 val_max+0.02])
+        SetFigure([], gcf)
+        set(gcf, 'position', [600 50 640*2 420*2]);
         xlim([-0.01 0.02])
-        MagInset(gcf, gca, [tvec(max_idx)-0.001,tvec(max_idx)+0.002,val_max-0.1, val_max+0.005],[tvec(max_idx)+0.0075,tvec(max_idx)+0.015,val_max-0.2, val_max], {'NE','NW'; 'SE','SW'}) 
-%         Square_subplots
+        MagInset(gcf, gca, [tvec(max_idx)-0.001,tvec(max_idx)+0.0015,val_min-0.02, val_max+0.005],[tvec(max_idx)+0.0075,tvec(max_idx)+0.015,val_min-0.03, val_max+0.01], {'NE','NW'; 'SE','SW'})
+        %         Square_subplots
         %%
         
         
@@ -464,7 +521,7 @@ SetFigure([], gcf)
     set(gcf, 'position', [600 50 640*2 420*2]);
     %     saveas(gcf, [fname '_' cell_id '_both.png']);
     saveas(gcf, [all_fig_dir fname '_' cell_id '_both.png']);
-
+    
     %     saveas_eps([fname '_' cell_id '_both'], cd)
     saveas_eps([fname '_' cell_id '_both'], all_fig_dir)
     
@@ -493,9 +550,9 @@ SetFigure([], gcf)
     saveas_eps([fname '_' cell_id '_all_phase'], all_fig_dir)
     
     
-        figure(111)
+    figure(111)
     cfg_fig.ft_size = font_size;
-%     SetFigure(cfg_fig, gcf)
+    %     SetFigure(cfg_fig, gcf)
     set(gcf, 'position', [600 50 640*2 420*2]);
     %     saveas(gcf, [fname '_' cell_id '_ccf.png']);
     saveas(gcf, [all_fig_dir fname '_' cell_id '_ccf_5.png']);
@@ -503,11 +560,11 @@ SetFigure([], gcf)
     %     saveas_eps([fname '_' cell_id '_ccf'], cd)
     saveas_eps([fname '_' cell_id '_ccf_5'], all_fig_dir)
     
-        close all
-
+    close all
+    
     
     %% save the ccf info
-%     save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
+    %     save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
     
     
     
@@ -515,7 +572,7 @@ SetFigure([], gcf)
     
 end % end of Spike loop
 
-    %% save the ccf info
-        save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
+%% save the ccf info
+save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
 
 end

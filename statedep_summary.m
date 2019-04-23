@@ -14,7 +14,7 @@ if isunix
     
     all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
     all_lat_dir = '/Volumes/Fenrir/State_dep/all_lat/';
-    all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf';
+    all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf/';
     summary_dir = '/Volumes/Fenrir/State_dep/Summary/';
 else
     addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
@@ -44,7 +44,7 @@ for iSess = 1:length(sess_list)
         this_cell = these_cells{iC};
         if ismember([sess_list(iSess).name(1:14) '_' this_cell], PARAMS.Good_cells) % check if this is a 'good' cell from above approvedd list
             
-                        freq_list = fieldnames(out.(this_cell));
+            freq_list = fieldnames(out.(this_cell));
             
             
             all_cells.([sess_list(iSess).name(1:14) '_' this_cell]) = out.(this_cell);
@@ -79,7 +79,7 @@ for iC = 1:length(cell_list)
             
             
             %% get the shuffle for the response max-min
-            for iShuf = 1:nShuf
+            for iShuf = nShuf:-1:1
                 this_shuf = [];
                 mix = randperm(length(all_cells.(this_cell).(f_list{iF}).latency(1,:)));
                 this_shuf(1,:) = all_cells.(this_cell).(f_list{iF}).latency(1,mix);
@@ -100,11 +100,17 @@ for iC = 1:length(cell_list)
                 this_resp(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
             end
             %
+            all_resp_phase(iC,iF) = max(this_resp)/min(this_resp);
+            all_resp_shuffle(iC, iF) = nanmean(all_shuf_ratio);
             all_resp_ratio(iC, iF) = ((max(this_resp)/min(this_resp)) - nanmean(all_shuf_ratio))/nanstd(all_shuf_ratio);
             if isnan(all_resp_ratio(iC, iF))
                 disp([num2str(iC), 'f' num2str(iF)])
             end
-            %%
+            
+            
+            
+            
+            %% get the
             
             for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:)) % get the phase segment numbers (should be 1:5 if phase split by 5
                 % labels for x axes
@@ -166,7 +172,7 @@ for ii =1:length(depth_sort)
     
     labels{ii} = strcat( num2str(floor(x_phase_resp_sort(ii)*100)), '%'); %num2str(depth_sort(ii)), '_m_m ',
     all_sess_id_sort{ii} = sess_id{depth_ord(ii)};
-
+    
 end
 
 % get the freq list for legend
@@ -181,9 +187,9 @@ for iF = 1:length(f_list)
 end
 
 %% remove cells with a response less than 20%
-
+cut_off = 0.2;
 for iC = length(x_phase_resp_sort):-1:1
-    if x_phase_resp_sort(iC) < .05
+    if x_phase_resp_sort(iC) < cut_off
         all_resp_v_shuf_sort(iC,:,:) = [];
         all_lat_sort(iC,:,:) = [];
         all_resp_sort(iC,:,:) = [];
@@ -194,7 +200,7 @@ for iC = length(x_phase_resp_sort):-1:1
         x_phase_resp_sort(iC,:,:) = [];
         freq_vals(iC,:) = [];
         labels{iC} = [];
-%         all_sess_id_sort{iC} = [];
+        %         all_sess_id_sort{iC} = [];
         depth_sort(iC) = [];
     end
 end
@@ -212,25 +218,26 @@ for iF = 1:length(f_list)
         imagesc(all_resp_v_shuf_sort(:,:,iF));
         axis xy
         xlabel('phase');
-        ylabel('cell id');
+        ylabel('cell');
         set(gca, 'xticklabel', phase_labels);
-        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels, 'fontsize',14 ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
         text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
         
         colorbar
         caxis([-2.5 2.5])
-    end 
+    end
     sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
     temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
     temp_all_resp_v_shuf(sig_cells==0)=NaN;
     %     add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
 end
 SetFigure([], gcf)
+set(gca, 'yticklabel', 'fontsize', 8);
 set(gcf, 'position', [282   50  1200  720])
 ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 text(0.35, 0.98,['Zscore v Shuf per stim across cells'], 'fontsize', font_size)
-% saveas(gcf, [summary_dir 'Summary_resp_v_shuf.png']);
-% saveas_eps('Summary_resp_v_shuf', summary_dir)
+saveas(gcf, [summary_dir 'Summary_resp_v_shuf.png']);
+saveas_eps('Summary_resp_v_shuf', summary_dir)
 %% make a response plot
 
 
@@ -257,7 +264,7 @@ for iC =1:size(all_resp_ratio_sort,1)
         % resp_ratio(iC,iF) = abs(max_val-min_val);
         freq_colors{iC,iF} = f_cor(iF,:);
         freq(iC, iF) = iF;
-            cell_id(iC,iF) = iC; 
+        cell_id(iC,iF) = iC;
     end
 end
 resp_ratio_1d = reshape(all_resp_ratio_sort, 1, numel(all_resp_ratio_sort));
@@ -271,7 +278,7 @@ cell_id_1d = reshape(cell_id,1, numel(cell_id));
 for iC = 1:length(resp_all_1d)
     hold on
     if depth_all_1d(iC) >3.5
-        scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
+        S(iC) = scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
     else
         scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled', 'd')
     end
@@ -287,8 +294,8 @@ lgd = legend(h, leg_freq, 'location', 'NorthEastOutside');
 legend('boxoff')
 lgd.FontSize = 18;
 
-xlim([0.2 .7])
-ylim([-2 4])
+xlim([cut_off .7])
+ylim([-2 10])
 line([0 0.7], [1.96, 1.96], 'color', [0.3 0.3 0.3])
 
 SetFigure([], gcf)
@@ -298,15 +305,15 @@ saveas_eps('Summary_resp_ratio', summary_dir)
 % extra legend figure
 figure(111)
 hold on
-    h(1) = plot(NaN,NaN,'o', 'color', 'k', 'MarkerFaceColor', 'k');
-    h(2) = plot(NaN,NaN,'d', 'color', 'k', 'MarkerFaceColor', 'k');
+h(1) = plot(NaN,NaN,'o', 'color', 'k', 'MarkerFaceColor', 'k');
+h(2) = plot(NaN,NaN,'d', 'color', 'k', 'MarkerFaceColor', 'k');
 axis off
-lgd = legend({'dStr', 'vStr'});
+lgd = legend({'vStr', 'dStr'});
 legend('boxoff')
 lgd.FontSize = 18;
 saveas_eps('Summary_Str_legend', summary_dir)
 %% make a table of responsive cells and which frequencies
-Keep_idx = resp_all_1d >0.2; 
+Keep_idx = resp_all_1d >0.05;
 
 keep_resp_ratio_1d = resp_ratio_1d(Keep_idx);
 keep_resp_all_1d = resp_all_1d(Keep_idx);
@@ -315,7 +322,7 @@ keep_freq_1d = freq_id_1d(Keep_idx);
 keep_cell_1d = cell_id_1d(Keep_idx);
 
 
-fprintf('\nNumber of responsive cells: %.2d/%.2d = %.2d %%\n',length(unique(keep_cell_1d(keep_resp_ratio_1d >1.96))),length(unique(keep_cell_1d)),round((length(unique(keep_cell_1d(keep_resp_ratio_1d >1.96)))/length(unique(keep_cell_1d)))*100) ) 
+fprintf('\nNumber of responsive cells: %.2d/%.2d = %.2d %%\n',length(unique(keep_cell_1d(keep_resp_ratio_1d >1.96))),length(unique(keep_cell_1d)),round((length(unique(keep_cell_1d(keep_resp_ratio_1d >1.96)))/length(unique(keep_cell_1d)))*100) )
 for iC = 1:length(keep_resp_all_1d)
     if keep_resp_ratio_1d(iC) >1.96
         fprintf(['Responsive cell ' all_sess_id_sort{keep_cell_1d(iC)} ' at ' num2str(keep_resp_ratio_1d(iC),2) ' SD, ' freq_list{keep_freq_1d(iC)} 'Hz. Overall Resp:' num2str((keep_resp_all_1d(iC)*100),2) '\n'])
@@ -325,7 +332,220 @@ end
 fprintf('\n')
 fprintf('Depths')
 depth_sort
+%% Stats prepare data
+
+
+%% format for GLM
+cell_list = fieldnames(all_cells);
+All_GLM_cells = zeros(length(cell_list), 6); % make an array for whether or not the phase or phase x amp is a predictor
+% cycle cells
+for iC = 1:length(cell_list)
+    clear this_depth this_subject this_response this_phase this_amp
+    
+    this_cell = cell_list{iC};
+    f_list = fieldnames(all_cells.(this_cell));
+    % clear and setup GLM variables
+    clearvars('GLM*', 'Phase_GLM')
+    
+    GLM_depth = [];
+    GLM_subject = [];
+    GLM_response = [];
+    % phases
+    GLM_phase_delta = [];
+    GLM_phase_theta = [];
+    GLM_phase_beta = [];
+    GLM_phase_lG = [];
+    GLM_phase_mG =[];
+    GLM_phase_hG = [];
+    % amp
+    GLM_amp_delta = [];
+    GLM_amp_theta = [];
+    GLM_amp_beta = [];
+    GLM_amp_lG = [];
+    GLM_amp_mG =[];
+    GLM_amp_hG = [];
+    
+    
+    
+    % for cells with less than complete responses (faded or
+    % unstable after some point
+    cut_idx = all_cells.(this_cell).ExpKeys.goodTrials(1,1:2);
+    
+    % get the probe depth
+    this_depth(1,1:(cut_idx(2)-cut_idx(1))+1) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
+    % subect ID
+    this_subject(1,1:(cut_idx(2)-cut_idx(1))+1) = str2double(all_cells.(this_cell).ExpKeys.subject(2:3));
+    
+    %get the overall response.  Note frequency doesnt matter
+    %since the overal responses were just copied for each freq
+    %range.  This is leftover from an earlier version
+    this_response = all_cells.(this_cell).(f_list{3}).resp(2,cut_idx(1):cut_idx(2));
+    
+    for iF = 1:length(f_list)
+        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+            continue
+        else
+            % get the phase and amp for this frequency
+            this_phase.(f_list{iF}) = categorical(all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2)),'Ordinal',false);
+            this_amp.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(2,cut_idx(1):cut_idx(2));
+            
+        end
+    end % end freq loop
+    
+    % collect and concatinate all the cells for the GLM
+    if isequal(length(this_amp.(f_list{3})),length(this_phase.(f_list{3})),length(this_response),length(this_subject),length(this_depth))
+        
+        GLM_pulse_num = cut_idx(1):cut_idx(2);
+        GLM_depth = this_depth;
+        GLM_subject = this_subject;
+        GLM_response = this_response;
+        
+        GLM_phase_delta =  this_phase.f_3_5;
+        GLM_phase_theta =  this_phase.f_7_10;
+        GLM_phase_beta = this_phase.f_15_25;
+        GLM_phase_lG = this_phase.f_30_40;
+        GLM_phase_mG = this_phase.f_40_60;
+        GLM_phase_hG = this_phase.f_60_80;
+        
+        GLM_amp_delta =  this_amp.f_3_5;
+        GLM_amp_theta =  this_amp.f_7_10;
+        GLM_amp_beta = this_amp.f_15_25;
+        GLM_amp_lG =  this_amp.f_30_40;
+        GLM_amp_mG =  this_amp.f_40_60;
+        GLM_amp_hG =  this_amp.f_60_80;
+    else
+        error('these are not equal')
+    end
+    
+    
+    Phase_GLM.tbl = table(GLM_subject', GLM_depth', GLM_response',GLM_pulse_num',...
+        GLM_phase_delta', GLM_phase_theta', GLM_phase_beta', GLM_phase_lG', GLM_phase_mG', GLM_phase_hG', ...
+        GLM_amp_delta', GLM_amp_theta', GLM_amp_beta', GLM_amp_lG', GLM_amp_mG', GLM_amp_hG', ...
+        'VariableNames',{'SubjectID','Depth', 'Response','Pulse_num' 'Phase_delta', 'Phase_theta', 'Phase_beta', 'Phase_lG', 'Phase_mG', 'Phase_hG',...
+        'Amp_delta', 'Amp_theta', 'Amp_beta', 'Amp_lG', 'Amp_mG', 'Amp_hG'});
+    
+    Phase_GLM.tbl.SubjectID = nominal(Phase_GLM.tbl.SubjectID);
+    Phase_GLM.tbl.Response = logical(Phase_GLM.tbl.Response);
+    
+    Phase_GLM.model.baseline.modelspec = 'Response ~ 1 + Pulse_num';
+    Phase_GLM.model.dphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_delta';
+    Phase_GLM.model.tphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta';
+    Phase_GLM.model.bphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta';
+    Phase_GLM.model.lGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG';
+    Phase_GLM.model.mGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG';
+    Phase_GLM.model.hGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG';
+    
+    % list the amp model
+    Amp_GLM.model.baseline.modelspec = 'Response ~ 1 + Pulse_num'; % just to keep the length consistent
+    
+    Amp_GLM.model.dAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_delta * Amp_delta';
+    Amp_GLM.model.tAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta *Amp_theta';
+    Amp_GLM.model.bAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta *Amp_beta';
+    Amp_GLM.model.lGAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG * Amp_lG';
+    Amp_GLM.model.mGAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG *Amp_mG';
+    Amp_GLM.model.hGAmp.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG *Amp_hG';
+    
+    models = fieldnames(Phase_GLM.model);
+    amp_models = fieldnames(Amp_GLM.model);
+    
+    %loop models
+    for iMod = 1:length(models);
+        
+        model_out.(models{iMod}) =  fitglm(Phase_GLM.tbl, Phase_GLM.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
+        model_out.(models{iMod}) % [temp] just to print the outputs
+        
+%         All_GLMS.model.(models{iMod}).pValue( 1:length(model_out.(models{iMod}).Coefficients.pValue)) = model_out.(models{iMod}).Coefficients.pValue; % should initialize this, but that's a pain
+%         Phase_GLM.model.(models{iMod}).varnames = model_out.(models{iMod}).PredictorNames;
+%         
+        %Identify cells that pass and flag them phase mod
+        if sum(model_out.(models{iMod}).Coefficients.pValue(2:end)<0.05) >0 && iMod > 1
+            All_GLM_cells(iC, iMod-1) = 1;
+            
+            % add in LFP amplitude
+            model_w_amp = fitglm(Phase_GLM.tbl, Amp_GLM.model.(amp_models{iMod}).modelspec,'link','logit','Distribution','binomial');
+            
+            % compare models, if better flag as phase x amp
+            if model_w_amp.ModelCriterion.AIC <  model_out.(models{iMod}).ModelCriterion.AIC
+                All_GLM_cells(iC, iMod-1) = 2;
+                
+            end % end compare
+        end % end phase x amp
+    end % end model
+end % end cell loop
+
+% summary of all modulated cells
+figure(111)
+imagesc(All_GLM_cells)
+set(gca, 'xticklabels', {'D', 'Th', 'B', 'lG', 'mG', 'hG'})
+ylabel('cell number')
+
+
+
+%% 
+
+
+%                    % run the GLM
+%                    for iF = 1:length(f_list)
+%                        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+%                            continue
+%                        else
+%
+%                            % check for model vs intercept
+%                                    Phase_GLM.glm = fitglm(Phase_GLM.tbl,'Response~1+Condition+(1|SubjectID)+(1|SessID)');
+%                                 b = glmfit(x,y,'binomial','link','logit')
+%
+%
+%                        end % check for expkeys field
+%
+%
+%
+%                    end % end freq loop
+%
+
+
+%% Statistical model
+
+% Loop cells
+
+
+
+
+% loop frequencys
+
+
+% check baseline model with just an intercept
+
+
+% glm(response ~ phase at freq)
+
+% if sig, then compare to interaction with amplitude at that
+% frequency
+
+
+
+
 %%
+
+%                     GLM_depth = [GLM_depth, this_depth];
+%                     GLM_subject = [GLM_subject, this_subject];
+%                     GLM_response = [GLM_response, this_response];
+%
+%                     GLM_phase_delta = [GLM_phase_delta, this_phase.f_3_5];
+%                     GLM_phase_theta = [GLM_phase_theta, this_phase.f_7_10];
+%                     GLM_phase_beta = [GLM_phase_beta, this_phase.f_15_25];
+%                     GLM_phase_lG = [GLM_phase_lG, this_phase.f_30_40];
+%                     GLM_phase_mG = [GLM_phase_mG, this_phase.f_40_60];
+%                     GLM_phase_hG = [GLM_phase_hG, this_phase.f_60_80];
+%
+%                     GLM_amp_delta = [GLM_amp_delta, this_amp.f_3_5];
+%                     GLM_amp_theta = [GLM_amp_theta, this_amp.f_7_10];
+%                     GLM_amp_beta = [GLM_amp_beta, this_amp.f_15_25];
+%                     GLM_amp_lG = [GLM_amp_lG, this_amp.f_30_40];
+%                     GLM_amp_mG = [GLM_amp_mG, this_amp.f_40_60];
+%                     GLM_amp_hG = [GLM_amp_hG, this_amp.f_60_80];
+
+%%
+
 
 % %% make a table of responsive cells, where they are, subject ID, ....
 % Sub_list = {'M13', 'M14'};
@@ -361,14 +581,14 @@ depth_sort
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_lat_sort)+1, f_list{iF}, 'fontsize', font_size)
 %         colorbar
-%         
+%
 %     end
 % end
 % SetFigure([], gcf)
 % set(gcf, 'position', [282   50  1200  720])
 % ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 % text(0.35, 0.98,['Latency to first spike across cells'], 'fontsize', font_size)
-% 
+%
 % saveas(gcf, [summary_dir 'Summary_latency_raw.png']);
 % saveas_eps('Summary_latency_raw', summary_dir)
 % %%
@@ -378,7 +598,7 @@ depth_sort
 %         continue
 %     else
 %         subplot(2,ceil(length(f_list)-1)/2, iF)
-%         
+%
 %         imagesc(all_lat_v_shuf_sort(:,:,iF))
 %         axis xy
 %         xlabel('phase')
@@ -386,14 +606,14 @@ depth_sort
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_lat_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
 %         colorbar
-%         
+%
 %     end
 % end
 % SetFigure([], gcf)
 % set(gcf, 'position', [282   50  1200  720])
 % ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 % text(0.35, 0.98,['Latency to first spike across cells (above 2d of shuf)'], 'fontsize', font_size)
-% 
+%
 % saveas(gcf, [summary_dir 'Summary_latency_zshuf.png']);
 % saveas_eps('Summary_latency_z_shuf', summary_dir)
 % %%
@@ -410,7 +630,7 @@ depth_sort
 %         ylabel('cell id')
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
-%         
+%
 %         colorbar
 %         caxis([-2.5 2.5])
 %     end
@@ -421,9 +641,9 @@ depth_sort
 % text(0.35, 0.98,['Zscore first spike latency across cells'], 'fontsize', font_size)
 % saveas(gcf, [summary_dir 'Summary_zscore.png']);
 % saveas_eps('Summary_zscore', summary_dir)
-% 
+%
 % %% count version
-% 
+%
 % figure(3)
 % for iF = 1:length(f_list)
 %     if strcmp(f_list{iF}, 'hdr') || strcmp(f_list{iF}, 'ExpKeys')
@@ -436,7 +656,7 @@ depth_sort
 %         ylabel('cell id')
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_count_sort)+1, f_list{iF}, 'fontsize', font_size)
-%         
+%
 %         colorbar
 %         %         caxis([-2.5 2.5])
 %     end
@@ -447,8 +667,8 @@ depth_sort
 % text(0.35, 0.98,['nSpikes per stim across cells'], 'fontsize', font_size)
 % saveas(gcf, [summary_dir 'Summary_count.png']);
 % saveas_eps('Summary_count', summary_dir)
-% 
-% 
+%
+%
 % %% response version
 % figure(5)
 % for iF = 1:length(f_list)
@@ -462,7 +682,7 @@ depth_sort
 %         ylabel('cell id')
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_resp_sort)+1, f_list{iF}, 'fontsize', font_size)
-%         
+%
 %         colorbar
 %         %         caxis([-2.5 2.5])
 %     end
@@ -473,7 +693,7 @@ depth_sort
 % text(0.35, 0.98,['Response per stim across cells'], 'fontsize', font_size)
 % saveas(gcf, [summary_dir 'Summary_resp.png']);
 % saveas_eps('Summary_resp', summary_dir)
-% 
+%
 % % zscore
 % figure(6)
 % for iF = 1:length(f_list)
@@ -487,7 +707,7 @@ depth_sort
 %         ylabel('cell id')
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_lat)+1, f_list{iF}, 'fontsize', font_size)
-%         
+%
 %         colorbar
 %         %         caxis([-2.5 2.5])
 %     end
@@ -498,7 +718,7 @@ depth_sort
 % text(0.35, 0.98,['Zscore response per stim across cells'], 'fontsize', font_size)
 % saveas(gcf, [summary_dir 'Summary_resp_z.png']);
 % saveas_eps('Summary_resp_z', summary_dir)
-% 
+%
 % % relative to all
 % % zscore
 % figure(7)
@@ -513,7 +733,7 @@ depth_sort
 %         ylabel('cell id')
 %         set(gca, 'xticklabel', phase_labels)
 %         text(floor(length(phase_labels)/2),length(all_resp_v_all_sort)+1, f_list{iF}, 'fontsize', font_size)
-%         
+%
 %         colorbar
 %         %         caxis([-2.5 2.5])
 %     end

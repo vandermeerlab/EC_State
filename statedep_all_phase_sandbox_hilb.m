@@ -1,4 +1,4 @@
-function statedep_all_phase_sandbox
+function statedep_all_phase_sandbox_hilb
 % restoredefaultpath;
 
 if isunix
@@ -52,18 +52,18 @@ else
     wSize = 1024;
 end
 
-[Pxx,F] = pwelch(this_csc.data, rectwin(wSize), wSize/8, [], Fs);
+[Pxx,F] = pwelch(diff(this_csc.data), rectwin(wSize), wSize/8, [], Fs);
     %% look at the psd
     figure(3)
-    subplot(333);
+    subplot(3,2,1);
     plot(F, 10*log10(Pxx), 'k', 'LineWidth', 2);
     set(gca, 'XLim', [0 100], 'FontSize', font_size); grid on;
     xlabel('Frequency (Hz)');
     title(this_csc.label{1},'fontsize', font_size);
-    
-%% load expkeys
-LoadExpKeys
-
+    SetFigure([], gcf)
+    %% load expkeys
+    LoadExpKeys
+%% load events
 cfg = [];
 cfg.eventList = {ExpKeys.laser_on};
 cfg.eventLabel = {'laser on'};
@@ -94,52 +94,15 @@ end
 this_csc = restrict(this_csc, start_stop.t{1}(main_rec_idx), start_stop.t{2}(main_rec_idx));
 
 
-% %% inspect stim artifact
-% this_stim_binned = zeros(size(this_csc.tvec));
-% idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
-% this_spk_binned(idx) = 1;
-% [xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
-% tvec = tvec ./ Fs;
-% 
-% for iShuf = 1:30
-%     this_stim_binned = zeros(size(this_csc.tvec));
-% idx_shuf = round((max(idx)-min(idx)).*rand(length(idx),1) + min(idx));
-% this_spk_binned(idx_shuf) = 1;
-% [xc_shuf(iShuf,:), ~] = xcorr(this_csc.data, this_spk_binned, 500);
-%     
-% end
-% 
-% 
-% figure(102)
-% plot(tvec, xc, 'k', 'LineWidth', 2);
-% hold on
-% plot(tvec, nanmean(xc_shuf,1), '--')
+%% inspect stim artifact
+this_stim_binned = zeros(size(this_csc.tvec));
+idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+this_spk_binned(idx) = 1;
+[xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+tvec = tvec ./ Fs;
 
-% %% alternative version
-% for iE = 1:length(laser_on.t{1});
-%     data_temp = restrict(this_csc, laser_on.t{1}(iE)-0.1, laser_on.t{1}(iE)+0.1);
-%    these_stims(iE,:) = data_temp.data;
-%    clear data_temp
-% end
-% 
-% for iShuf = 1:25
-%     shuf_idx = round((max(laser_on.t{1})-min(laser_on.t{1})).*rand(10000,1) + min(laser_on.t{1}));
-%     for iE = 1:length(shuf_idx)
-%         data_temp = restrict(this_csc, shuf_idx(iE)-0.1, shuf_idx(iE)+0.1);
-%         these_stims_shuf(iE,:, iShuf) = data_temp.data;
-%         clear data_temp
-%     end
-% end
-% % convert shuf into 2d
-% 
-% these_stims_shuf_reshape = reshape(permute(these_stims_shuf,[1 3 2]),[],size(these_stims_shuf,2),1);
-%     %%
-% figure(103)
-% plot(1:length(these_stims), nanmean(these_stims))
-% hold on
-% plot(1:length(these_stims), nanmean(these_stims_shuf_reshape), '-', 'color', [0.3 0.3 0.3])
-% plot(1:length(these_stims), nanmean(these_stims_shuf_reshape)+1.96*nanstd(these_stims_shuf_reshape(1:1000,:)), '--', 'color', [0.3 0.3 0.3])
-% plot(1:length(these_stims), nanmean(these_stims_shuf_reshape)-1.96*nanstd(these_stims_shuf_reshape(1:1000,:)), '--', 'color', [0.3 0.3 0.3])
+figure(101)
+plot(tvec, xc, 'k', 'LineWidth', 2);
 
 %% load spikes
 cfg = []; cfg.getTTnumbers = 0;
@@ -297,28 +260,34 @@ for iC = 1:length(S.label)
         %% multi-phase breakdown
         figure(111)
         subplot(ceil(length(f_list)/2),2, iF);
+        ms_tvec = tvec*1000; %convert to ms
         for iPhase = 1:length(edges)-1
 %             h(3)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3), 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
 %             h(4)= plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) + 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
 %             h(5) = plot(tvec, nanmean(all_ccf_shuf(iPhase,:,:),3) - 1.96*nanstd(all_ccf_shuf(iPhase,:,:),[],3), '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5);
-                         h(1) = plot(tvec, all_ccf(iPhase,:), '-', 'color', c_ord(iPhase,:), 'LineWidth', 1); hold on;
+                         h(1) = plot(ms_tvec, all_ccf(iPhase,:), '-', 'color', c_ord(iPhase,:), 'LineWidth', 1); hold on;
 
             max_val(iPhase) = max(all_ccf(iPhase,:));
             max_shuf_val(iPhase) = max(nanmean(all_ccf_shuf(iPhase,:,:),3));
             
         end
-         set(gca, 'FontSize', font_size); xlabel('time (s)'); ylabel('stimulus-response xcorr');
-        title(sprintf('5-phase split %.1f-%.1f Hz', f_list{iF}(1), f_list{iF}(2)), 'fontsize', font_size);
+         set(gca, 'FontSize', font_size); xlabel('time (ms)'); ylabel('response %');
+        title(sprintf('%.1f - %.1f Hz', f_list{iF}(1), f_list{iF}(2)), 'fontsize', font_size);
         % get a zoom in
         [~, max_idx] = max(diff(all_ccf(iPhase,:)));
 %         xlim([tvec(max_idx)-0.0005 tvec(max_idx)+0.002]);
         val_max = max(max_val);
+        val_min = min(max_val);
 %         ylim([val_max-0.1 val_max+0.02])
 SetFigure([], gcf)
     set(gcf, 'position', [600 50 640*2 420*2]);
-        xlim([-0.01 0.02])
-        MagInset(gcf, gca, [tvec(max_idx)-0.001,tvec(max_idx)+0.002,val_max-0.05, val_max+0.005],[tvec(max_idx)+0.0075,tvec(max_idx)+0.015,val_max-0.2, val_max], {'NE','NW'; 'SE','SW'}) 
-%         Square_subplots
+        xlim([-5 15])
+        ymax = ylim;
+                rectangle('position', [0, 0, 1, ymax(2)], 'facecolor',[([4,172,218]./255) 0.5], 'edgecolor',[([4,172,218]./255) 0.5] )
+        set(gca, 'ylim', ymax);
+        MagInset(gcf, gca, [ms_tvec(max_idx)-0.5,ms_tvec(max_idx)+2,val_min-0.05, val_max+0.005],[ms_tvec(max_idx)+5,ms_tvec(max_idx)+10,val_max-0.2, val_max+0.005], {'NE','NW'; 'SE','SW'}) 
+
+% Square_subplots
         %%
         
         
@@ -519,3 +488,4 @@ end % end of Spike loop
         save([ all_ccf_dir  hdr.subject '_' hdr.date '.mat'], 'ccf_out', '-v7.3')
 
 end
+
