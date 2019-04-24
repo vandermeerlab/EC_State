@@ -503,7 +503,7 @@ for iC = 1:length(cell_list)
     end
     for iMod = 1:length(models);
         all_mse.(models{iMod}){iC} = nanmean(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod}))));
-        all_mse_relative.(models{iMod}){iC} = all_mse.baseline{iC} - all_mse.(models{iMod}){iC};
+        all_mse_relative.(models{iMod}){iC} = all_mse.baseline{iC} - all_mse_relative.(models{iMod}){iC};
 
     end
 end
