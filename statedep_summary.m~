@@ -1,3 +1,4 @@
+
 function statedep_summary
 %% collect the outputs from statedep_all_phase_sandbox and statedep_latency_phase_sandbox
 %
@@ -103,6 +104,9 @@ for iC = 1:length(cell_list)
             all_resp_phase(iC,iF) = max(this_resp)/min(this_resp);
             all_resp_shuffle(iC, iF) = nanmean(all_shuf_ratio);
             all_resp_ratio(iC, iF) = ((max(this_resp)/min(this_resp)) - nanmean(all_shuf_ratio))/nanstd(all_shuf_ratio);
+           [~, all_resp_p_phase_max(iC, iF)] = max(this_resp);
+           [~, all_resp_p_phase_min(iC, iF)] = min(this_resp);
+
             if isnan(all_resp_ratio(iC, iF))
                 disp([num2str(iC), 'f' num2str(iF)])
             end
@@ -168,6 +172,9 @@ all_resp_v_all_sort = all_resp_v_all(depth_ord,:,:);
 all_lat_v_shuf_sort = all_lat_v_shuf(depth_ord,:,:);
 all_count_sort = all_count(depth_ord,:,:);
 all_resp_ratio_sort = all_resp_ratio(depth_ord, :,:);
+all_resp_p_phase_max_sort = all_resp_p_phase_max(depth_ord, :,:);
+all_resp_p_phase_min_sort = all_resp_p_phase_min(depth_ord, :,:);
+
 for ii =1:length(depth_sort)
     
     labels{ii} = strcat( num2str(floor(x_phase_resp_sort(ii)*100)), '%'); %num2str(depth_sort(ii)), '_m_m ',
@@ -197,7 +204,11 @@ for iC = length(x_phase_resp_sort):-1:1
         all_lat_v_shuf_sort(iC,:,:) = [];
         all_count_sort(iC,:,:) = [];
         all_resp_ratio_sort(iC,:,:) = [];
+        all_resp_p_phase_max_sort(iC,:,:) = [];
+        all_resp_p_phase_min_sort(iC,:,:) = [];
         x_phase_resp_sort(iC,:,:) = [];
+
+
         freq_vals(iC,:) = [];
         labels{iC} = [];
         %         all_sess_id_sort{iC} = [];
@@ -219,12 +230,13 @@ for iF = 1:length(f_list)
         axis xy
         xlabel('phase');
         ylabel('cell');
-        set(gca, 'xticklabel', phase_labels);
-        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels, 'fontsize',14 ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+        set(gca, 'xticklabel', []);
+        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels, 'fontsize',14); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
         text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
-        
-        colorbar
+%         if strcmp(f_list{iF}, 'f_60_80')
+%         colorbar
         caxis([-2.5 2.5])
+%         end
     end
     sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
     temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
@@ -232,12 +244,32 @@ for iF = 1:length(f_list)
     %     add_num_imagesc(gca, temp_all_resp_v_shuf, 2, 12)
 end
 SetFigure([], gcf)
-set(gca, 'yticklabel', 'fontsize', 8);
-set(gcf, 'position', [282   50  1200  720])
+% set(gca, 'fontsize', 8);
+% for iSub = 1:6
+%     subplot(2,3,iSub)
+% set(gca, 'yticklabel',labels, 'fontsize',12)
+% end
+set(gcf, 'position', [282   50  1100  800])
 ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
-text(0.35, 0.98,['Zscore v Shuf per stim across cells'], 'fontsize', font_size)
+% text(0.35, 0.98,['Zscore v Shuf per stim across cells'], 'fontsize', font_size)
 saveas(gcf, [summary_dir 'Summary_resp_v_shuf.png']);
 saveas_eps('Summary_resp_v_shuf', summary_dir)
+
+% make a plot just for the color bar
+figure(888)
+subplot(2,3,6)
+imagesc([-2.5 2.5])
+        xlabel('phase');
+        ylabel('cell');
+        set(gca, 'xticklabel', []);
+        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,3))], 'yticklabel',labels, 'fontsize',14 ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+        text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{3}, 'fontsize', font_size)
+colorbar
+        caxis([-2.5 2.5])
+        SetFigure([], gcf)
+set(gcf, 'position', [282   50  1100  800])
+ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
+saveas_eps('Summary_resp_v_shuf_Cbar', summary_dir)
 %% make a response plot
 
 
@@ -278,7 +310,7 @@ cell_id_1d = reshape(cell_id,1, numel(cell_id));
 for iC = 1:length(resp_all_1d)
     hold on
     if depth_all_1d(iC) >3.5
-        S(iC) = scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled')
+        S(iC) = scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled');
     else
         scatter(resp_all_1d(iC), resp_ratio_1d(iC),100,freq_colors_1d{iC}, 'filled', 'd')
     end
@@ -312,6 +344,46 @@ lgd = legend({'vStr', 'dStr'});
 legend('boxoff')
 lgd.FontSize = 18;
 saveas_eps('Summary_Str_legend', summary_dir)
+% %% make a polar of the prefered phase
+% 
+%  ver = version;
+%     ver = str2double(ver(end-5:end-2));
+% n_phases = 5;
+%         fprintf('\nPhase split into %1d bins\n', n_phases)
+%         [~, edges, bin] = histcounts(-pi:pi, n_phases, 'BinLimits', [-pi, pi]);
+%         phase_center = (edges(1:end-1) + edges(2:end))/2;
+%         for iPhase = 1:max(all_resp_p_phase_max_sort)
+%         all_resp_p_phase_max_sort(all_resp_p_phase_max_sort==iPhase) = phase_center(iPhase);
+%         end
+% 
+%         figure(123)
+%         for iFreq = 1:size(all_resp_p_phase_max_sort,2)
+%             
+%             phase_mean(iFreq) = circ_mean(all_resp_p_phase_max_sort(:,iFreq));
+%             vector_r(iFreq) = circ_r(all_resp_p_phase_max_sort(:,iFreq));
+%             
+%             if ver >= 2017
+%                 h = polarplot( [0 phase_mean(iFreq)],[0 vector_r(iFreq)]);
+%                 rlim([0 1])
+%                 set(gca, 'ThetaDir', 'clockwise', 'ThetaZeroLocation', 'top','RTick' ,[0.5 1], 'FontSize', 22, 'FontName', 'Helvetica')
+%                 cfg_polar.axes_labels = 0; % turns off any scaling of the x and y label which don't work in polar plots
+%             else
+%                 h_temp = polar([0 0], [0 1]);
+%                 hold on
+%                 h = polar([0 phase_mean(iFreq)], [0 vector_r(iFreq)]);
+%                 set(h_temp, 'visible', 'off') ;
+%                 cfg_polar.axes_labels = 1; % turns off any scaling of the x and y label which don't work in polar plots
+%             end
+%             
+%             
+% %         [t,r ] = rose(all_resp_p_phase_max_sort(:,iFreq));
+% %         subplot(2,3,iFreq)
+% %         polar(t,r)
+% %         polarhistogram(all_resp_p_phase_max_sort(:,iFreq),100)
+% %         title(f_list{iFreq})
+%         end
+
+
 %% make a table of responsive cells and which frequencies
 Keep_idx = resp_all_1d >0.05;
 
@@ -358,7 +430,7 @@ All_GLM_cells = zeros(length(cell_list), 6); % make an array for whether or not 
     Phase_GLM.model.mGphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG *Amp_mG';
     Phase_GLM.model.hGphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG *Amp_hG';
     
-    all_model ='Response ~ 1 + Pulse_num + Phase_delta + Phase_theta + Phase_beta + Phase_lG + Phase_mG +Phase_hG + Amp_delta+ Amp_theta+ Amp_beta + Amp_lG+ Amp_mG+ Amp_hG';
+%     Phase_GLM.model.all_model.modelspec ='Response ~ 1 + Pulse_num + Phase_delta + Phase_theta + Phase_beta + Phase_lG + Phase_mG +Phase_hG + Amp_delta+ Amp_theta+ Amp_beta + Amp_lG+ Amp_mG+ Amp_hG';
 
     models = fieldnames(Phase_GLM.model);
     
@@ -415,7 +487,9 @@ for iC = 1:length(cell_list)
             continue
         else
             % get the phase and amp for this frequency
-            this_phase.(f_list{iF}) = categorical(all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2)),'Ordinal',false);
+            this_phase.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2));
+
+%             this_phase.(f_list{iF}) = categorical(all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2)),'Ordinal',false);
             this_amp.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(2,cut_idx(1):cut_idx(2));
             
         end
@@ -460,7 +534,7 @@ for iC = 1:length(cell_list)
     %     amp_models = fieldnames(Amp_GLM.model);
     
     % make CV partitions
-    nPleats = 2;
+    nPleats = 1;
     nFolds = 10;
     for iPleat = nPleats:-1:1
         C{iPleat} = cvpartition(length(Phase_GLM.tbl.Response), 'KFold', nFolds);
@@ -484,7 +558,7 @@ for iC = 1:length(cell_list)
                 %                 model_out.(models{iMod}); % [temp] just to print the outputs
                 
                 Phase_GLM.model.(models{iMod}).tstat(iC,:,iFold) = model_out.Coefficients.tStat; % should initialize this, but that's a pain
-                Phase_GLM.model.(models{iMod}).varnames{iC,:} = model_out.PredictorNames;
+                Phase_GLM.model.(models{iMod}).varnames{iC,:} = model_out.CoefficientNames;
                                 
                 
                 %                 this_err = model_out.predict(Phase_GLM.tbl(te_idx,:)); % gives same output as below
@@ -502,12 +576,39 @@ for iC = 1:length(cell_list)
 
     end
     for iMod = 1:length(models);
-        all_mse.(models{iMod}){iC} = nanmean(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod}))));
-        all_mse_relative.(models{iMod}){iC} = all_mse.baseline{iC} - all_mse_relative.(models{iMod}){iC};
-
+        % get all the tstats
+        all_tstat.(models{iMod}){iC} = nanmean(Phase_GLM.model.(models{iMod}).tstat(iC,end,:));
+        all_tstat_name = Phase_GLM.model.(models{iMod}).varnames{iC,end};
+        
+        all_mse.(models{iMod}){iC} = nanmean(sqrt(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod})))));
+        all_mse_relative.(models{iMod}){iC} = all_mse.baseline{iC} - all_mse.(models{iMod}){iC};
     end
 end
+
+% plot out the MSE
+for iMod = 1:length(models);
+    all_mse_relative.mat(:,iMod) = cell2mat(all_mse_relative.(models{iMod}));
+        all_tstat.mat(:,iMod) = cell2mat(all_tstat.(models{iMod}));
+
+end
+figure
+imagesc(all_mse_relative.mat)
+set(gca,'xtick', 1:length(models), 'xticklabel', models,'XTickLabelRotation', 45)
+set(gca, 'yticklabel', [])
+ylabel('cell number')
+    title('RMSE relative to baseline model')
+    
+    figure
+    imagesc(all_mse_relative.mat)
+set(gca,'xtick', 1:length(models), 'xticklabel', models,'XTickLabelRotation', 45)
 %% Compare across models
+% check tStats
+figure(234)
+imagesc(Phase_GLM.model.(models{iMod}).tstat(:,:,1))
+set(gca,'xtick', 1:length(model_out.CoefficientNames), 'xticklabel', strrep(model_out.CoefficientNames, '_', ' '),'XTickLabelRotation', 45)
+
+
+
 for iMod = 1:length(models);
     Phase_GLM.model.(models{iMod}).err(Phase_GLM.model.(models{iMod}).err==0) =NaN;
      if strcmp(models{iMod},'baseline')
