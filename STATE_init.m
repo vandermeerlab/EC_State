@@ -73,7 +73,7 @@ PARAMS.Good_cells = {'M13_2018_12_09_TT1_05_OK',...
 
 
 
-rng(10,'twister') % for reproducibility
+rng(11,'twister') % for reproducibility
 
 
 % add the required code

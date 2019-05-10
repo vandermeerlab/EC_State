@@ -17,6 +17,8 @@ if isunix
     all_lat_dir = '/Volumes/Fenrir/State_dep/all_lat/';
     all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf/';
     summary_dir = '/Volumes/Fenrir/State_dep/Summary/';
+    hist_summary_dir = '/Volumes/Fenrir/State_dep/Phase_hist/';
+    
 else
     addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
     addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
@@ -62,6 +64,405 @@ for iSess = 1:length(sess_list)
     
 end
 
+%% format for GLM
+cell_list = fieldnames(all_cells);
+All_GLM_cells = zeros(length(cell_list), 6); % make an array for whether or not the phase or phase x amp is a predictor
+% cycle cells
+
+
+
+% initialize models
+Phase_GLME.model.baseline.modelspec = 'Response ~ 1 + Pulse_num';
+Phase_GLME.model.dphase.modelspec = 'Response ~ 1 +  Pulse_num +Phase_delta';
+Phase_GLME.model.tphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta';
+Phase_GLME.model.bphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta';
+Phase_GLME.model.lGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG';
+Phase_GLME.model.mGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG';
+Phase_GLME.model.hGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG';
+
+% list the amp model
+Phase_GLME.model.damp.modelspec = 'Response ~ 1 + Pulse_num + Phase_delta + Amp_delta';
+Phase_GLME.model.tamp.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta + Amp_theta';
+Phase_GLME.model.bamp.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta + Amp_beta';
+Phase_GLME.model.lGamp.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG + Amp_lG';
+Phase_GLME.model.mGamp.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG + Amp_mG';
+Phase_GLME.model.hGamp.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG + Amp_hG';
+Phase_GLME.model.int.modelspec = 'Response ~ 1';
+
+
+%     Phase_GLME.model.all_model.modelspec ='Response ~ 1 + Pulse_num + Phase_delta + Phase_theta + Phase_beta + Phase_lG + Phase_mG +Phase_hG + Amp_delta+ Amp_theta+ Amp_beta + Amp_lG+ Amp_mG+ Amp_hG';
+
+models = fieldnames(Phase_GLME.model);
+
+% % initialize outputs
+% for iMod = 1:length(models)
+%     Phase_GLME.model.(models{iMod}).err = NaN(length(cell_list), 1500); % needs to be zeros because error output will be added to this
+%     %     Phase_GLME.model.(models{iMod}).tstat = nan(length(cell_list), 11);
+% end
+
+for iC =[1:length(cell_list)]%[1:2,4:9, 11:23,25:length(cell_list)]
+    clear this_depth this_subject this_response this_phase this_amp mse
+    
+    this_cell = cell_list{iC};
+    f_list = fieldnames(all_cells.(this_cell));
+
+    if nanmean(all_cells.(this_cell).f_3_5.resp(2,:)) < 0.2
+        disp([this_cell ' too few responses'])
+        kept_cell_depths(iC) = NaN; 
+        continue
+    end
+    
+    kept_cell_depths(iC) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
+
+    % clear and setup GLM variables
+    %clearvars('GLM*', 'Phase_GLME')
+    
+    GLM_depth = [];
+    GLM_subject = [];
+    GLM_response = [];
+    % phases
+    GLM_phase_delta = [];
+    GLM_phase_theta = [];
+    GLM_phase_beta = [];
+    GLM_phase_lG = [];
+    GLM_phase_mG =[];
+    GLM_phase_hG = [];
+    % amp
+    GLM_amp_delta = [];
+    GLM_amp_theta = [];
+    GLM_amp_beta = [];
+    GLM_amp_lG = [];
+    GLM_amp_mG =[];
+    GLM_amp_hG = [];
+    
+    
+    
+    % for cells with less than complete responses (faded or
+    % unstable after some point
+    cut_idx = all_cells.(this_cell).ExpKeys.goodTrials(1,1:2);
+    
+    % cut data first
+    % for field
+    % cut data
+%end
+    
+    % get the probe depth
+    this_depth(1,1:(cut_idx(2)-cut_idx(1))+1) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
+    % subect ID
+    this_subject(1,1:(cut_idx(2)-cut_idx(1))+1) = str2double(all_cells.(this_cell).ExpKeys.subject(2:3));
+    
+    %get the overall response.  Note frequency doesnt matter
+    %since the overal responses were just copied for each freq
+    %range.  This is leftover from an earlier version
+    this_response = all_cells.(this_cell).(f_list{3}).resp(2,cut_idx(1):cut_idx(2));
+    
+        
+    
+    for iF = 1:length(f_list)
+        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
+            continue
+        else
+                for iPhase = 1:5
+                    this_phase_idx = find(all_cells.(this_cell).(f_list{iF}).amp(1,:) == iPhase);
+                    to_remove  = this_phase_idx < cut_idx(1) | this_phase_idx > cut_idx(2);
+
+                    this_phase_idx(to_remove) = [];
+                    phase_response.(f_list{iF})(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+                end
+            % get the phase and amp for this frequency
+            %             this_phase.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2));
+            
+
+            this_phase.(f_list{iF}) = categorical(all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2)),'Ordinal',false);
+            this_amp.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(2,cut_idx(1):cut_idx(2));
+            all_cell_resp_curve(iC,:, iF)  = phase_response.(f_list{iF});
+        end
+    end % end freq loop
+    
+    % collect and concatinate all the cells for the GLM
+    if isequal(length(this_amp.(f_list{3})),length(this_phase.(f_list{3})),length(this_response),length(this_subject),length(this_depth))
+        
+        GLM_pulse_num = cut_idx(1):cut_idx(2);
+        GLM_depth = this_depth;
+        GLM_subject = this_subject;
+        GLM_response = this_response;
+        
+        
+        GLM_phase_delta =  phase_response.f_3_5(this_phase.f_3_5);
+        GLM_phase_theta =   phase_response.f_7_10(this_phase.f_7_10);
+        GLM_phase_beta =  phase_response.(f_list{3})(this_phase.f_15_25);
+        GLM_phase_lG =  phase_response.(f_list{4})(this_phase.f_30_40);
+        GLM_phase_mG =  phase_response.(f_list{5})(this_phase.f_40_60);
+        GLM_phase_hG =  phase_response.(f_list{6})(this_phase.f_60_80);
+%         GLM_phase_delta =  this_phase.f_3_5;
+%         GLM_phase_theta =  this_phase.f_7_10;
+%         GLM_phase_beta = this_phase.f_15_25;
+%         GLM_phase_lG = this_phase.f_30_40;
+%         GLM_phase_mG = this_phase.f_40_60;
+%         GLM_phase_hG = this_phase.f_60_80;
+        
+        GLM_amp_delta =  this_amp.f_3_5;
+        GLM_amp_theta =  this_amp.f_7_10;
+        GLM_amp_beta = this_amp.f_15_25;
+        GLM_amp_lG =  this_amp.f_30_40;
+        GLM_amp_mG =  this_amp.f_40_60;
+        GLM_amp_hG =  this_amp.f_60_80;
+    else
+        error('these are not equal')
+    end
+    
+    
+    Phase_GLME.tbl = table(GLM_subject', GLM_depth', GLM_response',GLM_pulse_num',...
+        GLM_phase_delta', GLM_phase_theta', GLM_phase_beta', GLM_phase_lG', GLM_phase_mG', GLM_phase_hG', ...
+        GLM_amp_delta', GLM_amp_theta', GLM_amp_beta', GLM_amp_lG', GLM_amp_mG', GLM_amp_hG', ...
+        'VariableNames',{'SubjectID','Depth', 'Response','Pulse_num' 'Phase_delta', 'Phase_theta', 'Phase_beta', 'Phase_lG', 'Phase_mG', 'Phase_hG',...
+        'Amp_delta', 'Amp_theta', 'Amp_beta', 'Amp_lG', 'Amp_mG', 'Amp_hG'});
+    
+    Phase_GLME.tbl.SubjectID = nominal(Phase_GLME.tbl.SubjectID);
+    Phase_GLME.tbl.Response = logical(Phase_GLME.tbl.Response);
+    
+    %     flag = [];
+    % summary figure
+    %        figure(1111)
+    %        table_names = fieldnames(Phase_GLME.tbl);
+    %        for iSub = 1:6
+    %            subplot(3,2,iSub)
+    %            [h_out(iSub)] =histogram(double(Phase_GLME.tbl.(table_names{iSub+4})));
+    % %            if sum(h_out(iSub).Values < 100) > 1
+    % %                flag = table_names{iSub+4};
+    % %            end
+    %            title(table_names{iSub+4})
+    %        end
+    %         saveas(gcf, [hist_summary_dir cell_list{iC} '.png']);
+    %         close(1111);
+    % flag cells that are excluded based on uneven distribution os
+    % phases.  Too few samples will cause an issue when building models
+    % with cross val trainer sets.
+    %         if ~isempty(flag)
+    %             disp([this_cell ' Had too few samples at ' num2str(flag)])
+    % %             continue
+    %         end
+    
+    
+    
+    
+    %     amp_models = fieldnames(Amp_GLM.model);
+    
+    % make CV partitions
+    nPleats = 1;
+    nFolds = 20;
+    for iPleat = nPleats:-1:1
+        C{iPleat} = cvpartition(length(Phase_GLME.tbl.Response), 'KFold', nFolds);
+    end
+    
+    %% run the GLMS w/ CV
+    
+    for iPleat = 1:nPleats
+        
+        for iFold = 1:C{iPleat}.NumTestSets
+            
+            fprintf('Pleat %d fold %d...\n', iPleat, iFold);
+            
+            % get idxs for training and testing set
+            tr_idx = C{iPleat}.training(iFold); te_idx = C{iPleat}.test(iFold);
+            
+            %loop models
+            for iMod = 1:length(models)
+                if strcmp(models{iMod}, 'baseline')
+%                     base_line = fitglme(Phase_GLME.tbl(tr_idx,:), Phase_GLME.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
+                        base_line = fitglme(Phase_GLME.tbl(tr_idx,:), Phase_GLME.model.(models{iMod}).modelspec);
+
+                end
+%                 model_out =  fitglme(Phase_GLME.tbl(tr_idx,:), Phase_GLME.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
+                        model_out =  fitglme(Phase_GLME.tbl(tr_idx,:), Phase_GLME.model.(models{iMod}).modelspec);
+
+                %                 model_out.(models{iMod}); % [temp] just to print the outputs
+                
+                % hold the tstat
+                Phase_GLME.model.(models{iMod}).tstat(iC,:,iFold) = model_out.Coefficients.tStat; % as per MvdM
+                Phase_GLME.model.(models{iMod}).varnames{iC,:} = model_out.CoefficientNames;
+                
+                % hold the Fstat
+%                 model_anova = anova(model_out);
+%                 if model_anova.pValue(end) < 0.05 && ~strcmp(models{iMod}, 'baseline')
+%                     %                     pause
+%                     disp([num2str(iC) ' ' models{iMod} ' ' model_anova.Term{end}])
+%                 end
+                
+%                 Phase_GLME.model.(models{iMod}).fstat(iC,:,iFold) = model_anova.FStat(end);
+%                 Phase_GLME.model.(models{iMod}).fstat_var{iC,:} = model_anova.Term{end};
+                
+                % this_err = model_out.predict(Phase_GLME.tbl(te_idx,:)); % gives same output as below
+                model_pred = predict(model_out, Phase_GLME.tbl(te_idx,:));
+                % other version
+                mse.(models{iMod})(:,iFold,iPleat) = nanmean((Phase_GLME.tbl.Response(te_idx,:) - model_pred).^2);
+                
+                % kept but not using multiple pleats so not really useful.
+%                 model_pred = (model_pred - Phase_GLME.tbl.Response(te_idx)).^2;
+%                 Phase_GLME.model.(models{iMod}).err(iC,te_idx) = Phase_GLME.model.(models{iMod}).err(iC,te_idx) + (model_pred ./ nPleats)';
+                
+            end % models
+            %             mse_mean
+        end
+        
+    end
+    
+    for iMod = 1:length(models)
+        % get all the tstats
+        all_tstat.(models{iMod}){iC} = nanmean(Phase_GLME.model.(models{iMod}).tstat(iC,end,:));
+        all_tstat_name{iMod} = Phase_GLME.model.(models{iMod}).varnames{iC}{end};
+        
+        % get the fstat
+%         all_fstat.(models{iMod}){iC} = nanmean(Phase_GLME.model.(models{iMod}).fstat(iC,end,:));
+%         all_fstat_name{iMod} = Phase_GLME.model.(models{iMod}).fstat_var{iC};
+        
+        % collec the MSE
+        all_mse.(models{iMod}){iC} = nanmean(sqrt(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod})))));
+       if  ~strcmp(models{iMod}, 'baseline')
+        all_mse_stat.(models{iMod}){iC} = ranksum(sqrt(reshape(mse.baseline,1,numel(mse.(models{iMod})))), sqrt(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod})))));
+       end
+
+        all_mse_relative.(models{iMod}){iC} = all_mse.(models{iMod}){iC}- all_mse.baseline{iC}; % negative value means better than baseline
+    end
+    %%
+    % compare models using all data
+    for iMod = 1:length(models)
+%         if strcmp(models{iMod}, 'baseline')
+%             base_line = fitglme(Phase_GLME.tbl, Phase_GLME.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
+%         end
+%         model_out =  fitglme(Phase_GLME.tbl, Phase_GLME.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
+        
+%         if ~strcmp(models{iMod}, 'baseline')
+%            model_comp = compare(model_out,base_line);
+%            Phase_GLME.model.(models{iMod}).comp = model_comp;
+        
+        %                 flag cells that have a lower MSE and compare is better.
+        p = ranksum(sqrt(reshape(mse.(models{end}),1,numel(mse.(models{iMod})))), sqrt(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod})))));
+        if p < 0.05
+        %if all_mse.baseline{iC}  > all_mse.(models{iMod}){iC} % && (isnan(model_comp.pValue(2)) || model_comp.pValue(2) < 0.05)
+            
+%             if ~(Phase_GLME.model.(models{iMod}).comp.Model(2) == 'base_line');
+                all_comp.sig{iC, iMod} = 1; 
+                all_comp.label{iC, iMod} = models(iMod); 
+
+            
+        else
+                            all_comp.sig{iC, iMod} = 0; 
+                all_comp.label{iC, iMod} = models(iMod); 
+        end
+%         end
+        
+    end
+end
+
+%% plot out the MSE
+for iMod = 1:length(models)
+    all_mse_relative.mat(:,iMod) = cell2mat(all_mse_relative.(models{iMod}));
+    all_tstat.mat(:,iMod) = cell2mat(all_tstat.(models{iMod}));
+%     all_fstat.mat(:,iMod) = cell2mat(all_fstat.(models{iMod}));
+    
+end
+
+%% sort cells based on depth
+kept_cell_depths(isnan(kept_cell_depths)) = [];
+[depth_sort, depth_ord] = sort(kept_cell_depths, 'descend');
+all_mse_relative.mat_sort = all_mse_relative.mat(depth_ord,:);
+%% 
+
+figure(210)
+imagesc(all_mse_relative.mat_sort(:,2:end-1))
+set(gca,'xtick', 1:length(models)-2, 'xticklabel', strrep(models(2:end-1),'_', ' '),'XTickLabelRotation', 45)
+set(gca, 'yticklabel', [])
+ylabel('cell number')
+title('RMSE relative to baseline model')
+saveas(gcf, [summary_dir 'GLM_MSE.png']);
+saveas_eps('GLME_MSE_color', summary_dir)
+
+figure(211)
+imagesc(all_tstat.mat)
+set(gca,'xtick', 1:length(all_tstat_name), 'xticklabel', strrep(all_tstat_name, '_', ' '),'XTickLabelRotation', 45)
+title('mean t-stat')
+saveas(gcf, [summary_dir 'GLME_tstat.png']);
+saveas_eps('GLME_tstat', summary_dir)
+
+figure(212)
+plot(1:length(all_tstat_name), nanmean(all_tstat.mat))
+set(gca,'xtick', 1:length(all_tstat_name), 'xticklabel', strrep(all_tstat_name, '_', ' '),'XTickLabelRotation', 45)
+
+% figure(214)
+% imagesc(all_fstat.mat(:,2:end))
+% set(gca,'xtick', 1:length(all_fstat_name)-1, 'xticklabel', strrep(all_fstat_name(2:end), '_', ' '),'XTickLabelRotation', 45)
+% title('mean F-stat')
+% colorbar
+% C_val = caxis;
+% caxis([2 C_val(2)]);
+
+
+saveas(gcf, [summary_dir 'GLME_Fstat.png']);
+saveas_eps('GLME_Fstat', summary_dir)
+
+%% Compare across models
+% check tStats
+figure(234)
+imagesc(Phase_GLME.model.(models{iMod}).tstat(:,:,1))
+set(gca,'xtick', 1:length(model_out.CoefficientNames), 'xticklabel', strrep(model_out.CoefficientNames, '_', ' '),'XTickLabelRotation', 45)
+
+
+
+for iMod = 1:length(models);
+    Phase_GLME.model.(models{iMod}).err(Phase_GLME.model.(models{iMod}).err==0) =NaN;
+    if strcmp(models{iMod},'baseline')
+        continue;
+    end
+    
+    model_v_baseline_err = Phase_GLME.model.baseline.err - Phase_GLME.model.(models{iMod}).err;
+    celldiffmean = nanmean(model_v_baseline_err ,2);
+    
+    figure(iMod)
+    plot(celldiffmean,'LineWidth',1); hold on;
+    ylabel('Prediction improvement'); xlabel('cell #');
+    title(models{iMod});
+    
+    
+    
+end
+
+%         All_GLMS.model.(models{iMod}).pValue( 1:length(model_out.(models{iMod}).Coefficients.pValue)) = model_out.(models{iMod}).Coefficients.pValue; % should initialize this, but that's a pain
+%         Phase_GLME.model.(models{iMod}).varnames = model_out.(models{iMod}).PredictorNames;
+%
+%Identify cells that pass and flag them phase mod
+%                 if sum(model_out.(models{iMod}).Coefficients.pValue(2:end)<0.05) >0 && iMod > 1
+%                     All_GLM_cells(iC, iMod-1) = 1;
+%
+%                     % add in LFP amplitude
+%                     model_w_amp = fitglm(Phase_GLME.tbl, Amp_GLM.model.(amp_models{iMod}).modelspec,'link','logit','Distribution','binomial');
+%
+%                     % compare models, if better flag as phase x amp
+%                     if model_w_amp.ModelCriterion.AIC <  model_out.(models{iMod}).ModelCriterion.AIC
+%                         All_GLM_cells(iC, iMod-1) = 2;
+%
+%                     end % end compare
+%                 end % end phase x amp
+
+
+
+
+% %% summary of all modulated cells
+% figure(111)
+% imagesc(All_GLM_cells)
+% set(gca, 'xticklabels', {'D', 'Th', 'B', 'lG', 'mG', 'hG'})
+% ylabel('cell number')
+
+
+
+%%
+
+
+
+
+
+
+
 %%
 nShuf = 10000;
 cell_list = fieldnames(all_cells);
@@ -98,15 +499,15 @@ for iC = 1:length(cell_list)
             % get the phase response averages
             for iPhase = unique(all_cells.(this_cell).(f_list{iF}).latency(1,:))
                 this_phase_idx = find(all_cells.(this_cell).(f_list{iF}).latency(1,:) == iPhase);
-                this_resp(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx));
+                this_resp(iPhase) = nanmean(all_cells.(this_cell).(f_list{iF}).resp(2,this_phase_idx)); % use this in the GLM. Replace hase cate with this valeu for each phase. 
             end
             %
             all_resp_phase(iC,iF) = max(this_resp)/min(this_resp);
             all_resp_shuffle(iC, iF) = nanmean(all_shuf_ratio);
             all_resp_ratio(iC, iF) = ((max(this_resp)/min(this_resp)) - nanmean(all_shuf_ratio))/nanstd(all_shuf_ratio);
-           [~, all_resp_p_phase_max(iC, iF)] = max(this_resp);
-           [~, all_resp_p_phase_min(iC, iF)] = min(this_resp);
-
+            [~, all_resp_p_phase_max(iC, iF)] = max(this_resp);
+            [~, all_resp_p_phase_min(iC, iF)] = min(this_resp);
+            
             if isnan(all_resp_ratio(iC, iF))
                 disp([num2str(iC), 'f' num2str(iF)])
             end
@@ -207,8 +608,8 @@ for iC = length(x_phase_resp_sort):-1:1
         all_resp_p_phase_max_sort(iC,:,:) = [];
         all_resp_p_phase_min_sort(iC,:,:) = [];
         x_phase_resp_sort(iC,:,:) = [];
-
-
+        
+        
         freq_vals(iC,:) = [];
         labels{iC} = [];
         %         all_sess_id_sort{iC} = [];
@@ -233,10 +634,10 @@ for iF = 1:length(f_list)
         set(gca, 'xticklabel', []);
         set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,iF))], 'yticklabel',labels, 'fontsize',14); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
         text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{iF}, 'fontsize', font_size)
-%         if strcmp(f_list{iF}, 'f_60_80')
-%         colorbar
+        %         if strcmp(f_list{iF}, 'f_60_80')
+        %         colorbar
         caxis([-2.5 2.5])
-%         end
+        %         end
     end
     sig_cells = double(all_resp_v_shuf_sort(:,:,iF)>1.96);
     temp_all_resp_v_shuf = all_resp_v_shuf_sort(:,:,iF);
@@ -259,14 +660,14 @@ saveas_eps('Summary_resp_v_shuf', summary_dir)
 figure(888)
 subplot(2,3,6)
 imagesc([-2.5 2.5])
-        xlabel('phase');
-        ylabel('cell');
-        set(gca, 'xticklabel', []);
-        set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,3))], 'yticklabel',labels, 'fontsize',14 ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
-        text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{3}, 'fontsize', font_size)
+xlabel('phase');
+ylabel('cell');
+set(gca, 'xticklabel', []);
+set(gca,'ytick', [1:length(all_resp_v_shuf_sort(:,:,3))], 'yticklabel',labels, 'fontsize',14 ); % [num2str(cell_depths) ' - ' num2str(floor(x_phase_resp(:,iF)*100))]
+text(floor(length(phase_labels)/2),length(all_resp_v_shuf_sort)+1, f_list{3}, 'fontsize', font_size)
 colorbar
-        caxis([-2.5 2.5])
-        SetFigure([], gcf)
+caxis([-2.5 2.5])
+SetFigure([], gcf)
 set(gcf, 'position', [282   50  1100  800])
 ha = axes('Position',[0 0 1 1],'Xlim',[0 1],'Ylim',[0  1],'Box','off','Visible','off','Units','normalized', 'clipping' , 'off');
 saveas_eps('Summary_resp_v_shuf_Cbar', summary_dir)
@@ -345,7 +746,7 @@ legend('boxoff')
 lgd.FontSize = 18;
 saveas_eps('Summary_Str_legend', summary_dir)
 % %% make a polar of the prefered phase
-% 
+%
 %  ver = version;
 %     ver = str2double(ver(end-5:end-2));
 % n_phases = 5;
@@ -355,13 +756,13 @@ saveas_eps('Summary_Str_legend', summary_dir)
 %         for iPhase = 1:max(all_resp_p_phase_max_sort)
 %         all_resp_p_phase_max_sort(all_resp_p_phase_max_sort==iPhase) = phase_center(iPhase);
 %         end
-% 
+%
 %         figure(123)
 %         for iFreq = 1:size(all_resp_p_phase_max_sort,2)
-%             
+%
 %             phase_mean(iFreq) = circ_mean(all_resp_p_phase_max_sort(:,iFreq));
 %             vector_r(iFreq) = circ_r(all_resp_p_phase_max_sort(:,iFreq));
-%             
+%
 %             if ver >= 2017
 %                 h = polarplot( [0 phase_mean(iFreq)],[0 vector_r(iFreq)]);
 %                 rlim([0 1])
@@ -374,8 +775,8 @@ saveas_eps('Summary_Str_legend', summary_dir)
 %                 set(h_temp, 'visible', 'off') ;
 %                 cfg_polar.axes_labels = 1; % turns off any scaling of the x and y label which don't work in polar plots
 %             end
-%             
-%             
+%
+%
 % %         [t,r ] = rose(all_resp_p_phase_max_sort(:,iFreq));
 % %         subplot(2,3,iFreq)
 % %         polar(t,r)
@@ -404,342 +805,6 @@ end
 fprintf('\n')
 fprintf('Depths')
 depth_sort
-
-
-%% format for GLM
-cell_list = fieldnames(all_cells);
-All_GLM_cells = zeros(length(cell_list), 6); % make an array for whether or not the phase or phase x amp is a predictor
-% cycle cells
-
-
-
-% initialize models
-    Phase_GLM.model.baseline.modelspec = 'Response ~ 1 + Pulse_num';
-    Phase_GLM.model.dphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_delta';
-    Phase_GLM.model.tphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta';
-    Phase_GLM.model.bphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta';
-    Phase_GLM.model.lGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG';
-    Phase_GLM.model.mGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG';
-    Phase_GLM.model.hGphase.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG';
-    
-    % list the amp model
-    Phase_GLM.model.dphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_delta * Amp_delta';
-    Phase_GLM.model.tphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_theta *Amp_theta';
-    Phase_GLM.model.bphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_beta *Amp_beta';
-    Phase_GLM.model.lGphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_lG * Amp_lG';
-    Phase_GLM.model.mGphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_mG *Amp_mG';
-    Phase_GLM.model.hGphase_amp.modelspec = 'Response ~ 1 + Pulse_num + Phase_hG *Amp_hG';
-    
-%     Phase_GLM.model.all_model.modelspec ='Response ~ 1 + Pulse_num + Phase_delta + Phase_theta + Phase_beta + Phase_lG + Phase_mG +Phase_hG + Amp_delta+ Amp_theta+ Amp_beta + Amp_lG+ Amp_mG+ Amp_hG';
-
-    models = fieldnames(Phase_GLM.model);
-    
-    % initialize outputs
-for iMod = 1:length(models);
-    Phase_GLM.model.(models{iMod}).err = zeros(length(cell_list), 1500); % needs to be zeros because error output will be added to this
-%     Phase_GLM.model.(models{iMod}).tstat = nan(length(cell_list), 11);
-end
-
-for iC = 1:length(cell_list)
-    clear this_depth this_subject this_response this_phase this_amp
-    
-    this_cell = cell_list{iC};
-    f_list = fieldnames(all_cells.(this_cell));
-    % clear and setup GLM variables
-    %clearvars('GLM*', 'Phase_GLM')
-    
-    GLM_depth = [];
-    GLM_subject = [];
-    GLM_response = [];
-    % phases
-    GLM_phase_delta = [];
-    GLM_phase_theta = [];
-    GLM_phase_beta = [];
-    GLM_phase_lG = [];
-    GLM_phase_mG =[];
-    GLM_phase_hG = [];
-    % amp
-    GLM_amp_delta = [];
-    GLM_amp_theta = [];
-    GLM_amp_beta = [];
-    GLM_amp_lG = [];
-    GLM_amp_mG =[];
-    GLM_amp_hG = [];
-    
-    
-    
-    % for cells with less than complete responses (faded or
-    % unstable after some point
-    cut_idx = all_cells.(this_cell).ExpKeys.goodTrials(1,1:2);
-    
-    % get the probe depth
-    this_depth(1,1:(cut_idx(2)-cut_idx(1))+1) = all_cells.(this_cell).ExpKeys.tetrodeDepths;
-    % subect ID
-    this_subject(1,1:(cut_idx(2)-cut_idx(1))+1) = str2double(all_cells.(this_cell).ExpKeys.subject(2:3));
-    
-    %get the overall response.  Note frequency doesnt matter
-    %since the overal responses were just copied for each freq
-    %range.  This is leftover from an earlier version
-    this_response = all_cells.(this_cell).(f_list{3}).resp(2,cut_idx(1):cut_idx(2));
-    
-    for iF = 1:length(f_list)
-        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
-            continue
-        else
-            % get the phase and amp for this frequency
-            this_phase.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2));
-
-%             this_phase.(f_list{iF}) = categorical(all_cells.(this_cell).(f_list{iF}).amp(1,cut_idx(1):cut_idx(2)),'Ordinal',false);
-            this_amp.(f_list{iF}) = all_cells.(this_cell).(f_list{iF}).amp(2,cut_idx(1):cut_idx(2));
-            
-        end
-    end % end freq loop
-    
-    % collect and concatinate all the cells for the GLM
-    if isequal(length(this_amp.(f_list{3})),length(this_phase.(f_list{3})),length(this_response),length(this_subject),length(this_depth))
-        
-        GLM_pulse_num = cut_idx(1):cut_idx(2);
-        GLM_depth = this_depth;
-        GLM_subject = this_subject;
-        GLM_response = this_response;
-        
-        GLM_phase_delta =  this_phase.f_3_5;
-        GLM_phase_theta =  this_phase.f_7_10;
-        GLM_phase_beta = this_phase.f_15_25;
-        GLM_phase_lG = this_phase.f_30_40;
-        GLM_phase_mG = this_phase.f_40_60;
-        GLM_phase_hG = this_phase.f_60_80;
-        
-        GLM_amp_delta =  this_amp.f_3_5;
-        GLM_amp_theta =  this_amp.f_7_10;
-        GLM_amp_beta = this_amp.f_15_25;
-        GLM_amp_lG =  this_amp.f_30_40;
-        GLM_amp_mG =  this_amp.f_40_60;
-        GLM_amp_hG =  this_amp.f_60_80;
-    else
-        error('these are not equal')
-    end
-    
-    
-    Phase_GLM.tbl = table(GLM_subject', GLM_depth', GLM_response',GLM_pulse_num',...
-        GLM_phase_delta', GLM_phase_theta', GLM_phase_beta', GLM_phase_lG', GLM_phase_mG', GLM_phase_hG', ...
-        GLM_amp_delta', GLM_amp_theta', GLM_amp_beta', GLM_amp_lG', GLM_amp_mG', GLM_amp_hG', ...
-        'VariableNames',{'SubjectID','Depth', 'Response','Pulse_num' 'Phase_delta', 'Phase_theta', 'Phase_beta', 'Phase_lG', 'Phase_mG', 'Phase_hG',...
-        'Amp_delta', 'Amp_theta', 'Amp_beta', 'Amp_lG', 'Amp_mG', 'Amp_hG'});
-    
-    Phase_GLM.tbl.SubjectID = nominal(Phase_GLM.tbl.SubjectID);
-    Phase_GLM.tbl.Response = logical(Phase_GLM.tbl.Response);
-    
-
-    %     amp_models = fieldnames(Amp_GLM.model);
-    
-    % make CV partitions
-    nPleats = 1;
-    nFolds = 10;
-    for iPleat = nPleats:-1:1
-        C{iPleat} = cvpartition(length(Phase_GLM.tbl.Response), 'KFold', nFolds);
-    end
-    
-    %% run the GLMS w/ CV
-    
-    for iPleat = 1:nPleats
-        
-        for iFold = 1:C{iPleat}.NumTestSets
-            
-            fprintf('Pleat %d fold %d...\n', iPleat, iFold);
-            
-            % get idxs for training and testing set
-            tr_idx = C{iPleat}.training(iFold); te_idx = C{iPleat}.test(iFold);
-            
-            %loop models
-            for iMod = 1:length(models);
-                
-                model_out =  fitglm(Phase_GLM.tbl(tr_idx,:), Phase_GLM.model.(models{iMod}).modelspec,'link','logit','Distribution','binomial');
-                %                 model_out.(models{iMod}); % [temp] just to print the outputs
-                
-                Phase_GLM.model.(models{iMod}).tstat(iC,:,iFold) = model_out.Coefficients.tStat; % should initialize this, but that's a pain
-                Phase_GLM.model.(models{iMod}).varnames{iC,:} = model_out.CoefficientNames;
-                                
-                
-                %                 this_err = model_out.predict(Phase_GLM.tbl(te_idx,:)); % gives same output as below
-                model_pred = predict(model_out, Phase_GLM.tbl(te_idx,:));
-                % other version
-                mse.(models{iMod})(:,iFold,iPleat) = nanmean((Phase_GLM.tbl.Response(te_idx,:) - model_pred).^2);
-                
-                model_pred = (model_pred - Phase_GLM.tbl.Response(te_idx)).^2;
-                Phase_GLM.model.(models{iMod}).err(iC,te_idx) = Phase_GLM.model.(models{iMod}).err(iC,te_idx) + (model_pred ./ nPleats)';
-                
-                
-            end % models
-            %             mse_mean
-        end
-
-    end
-    for iMod = 1:length(models);
-        % get all the tstats
-        all_tstat.(models{iMod}){iC} = nanmean(Phase_GLM.model.(models{iMod}).tstat(iC,end,:));
-        all_tstat_name = Phase_GLM.model.(models{iMod}).varnames{iC,end};
-        
-        all_mse.(models{iMod}){iC} = nanmean(sqrt(reshape(mse.(models{iMod}),1,numel(mse.(models{iMod})))));
-        all_mse_relative.(models{iMod}){iC} = all_mse.baseline{iC} - all_mse.(models{iMod}){iC};
-    end
-end
-
-% plot out the MSE
-for iMod = 1:length(models);
-    all_mse_relative.mat(:,iMod) = cell2mat(all_mse_relative.(models{iMod}));
-        all_tstat.mat(:,iMod) = cell2mat(all_tstat.(models{iMod}));
-
-end
-figure
-imagesc(all_mse_relative.mat)
-set(gca,'xtick', 1:length(models), 'xticklabel', models,'XTickLabelRotation', 45)
-set(gca, 'yticklabel', [])
-ylabel('cell number')
-    title('RMSE relative to baseline model')
-    
-    figure
-    imagesc(all_mse_relative.mat)
-set(gca,'xtick', 1:length(models), 'xticklabel', models,'XTickLabelRotation', 45)
-%% Compare across models
-% check tStats
-figure(234)
-imagesc(Phase_GLM.model.(models{iMod}).tstat(:,:,1))
-set(gca,'xtick', 1:length(model_out.CoefficientNames), 'xticklabel', strrep(model_out.CoefficientNames, '_', ' '),'XTickLabelRotation', 45)
-
-
-
-for iMod = 1:length(models);
-    Phase_GLM.model.(models{iMod}).err(Phase_GLM.model.(models{iMod}).err==0) =NaN;
-     if strcmp(models{iMod},'baseline')
-            continue;
-     end
-        
-                model_v_baseline_err = Phase_GLM.model.baseline.err - Phase_GLM.model.(models{iMod}).err;
-                        celldiffmean = nanmean(model_v_baseline_err ,2);
-                        
-                        figure(iMod)
-                                plot(celldiffmean,'LineWidth',1); hold on;
-        ylabel('Prediction improvement'); xlabel('cell #');
-        title(models{iMod});
-
-    
-    
-end
-
-%         All_GLMS.model.(models{iMod}).pValue( 1:length(model_out.(models{iMod}).Coefficients.pValue)) = model_out.(models{iMod}).Coefficients.pValue; % should initialize this, but that's a pain
-%         Phase_GLM.model.(models{iMod}).varnames = model_out.(models{iMod}).PredictorNames;
-%
-%Identify cells that pass and flag them phase mod
-%                 if sum(model_out.(models{iMod}).Coefficients.pValue(2:end)<0.05) >0 && iMod > 1
-%                     All_GLM_cells(iC, iMod-1) = 1;
-%
-%                     % add in LFP amplitude
-%                     model_w_amp = fitglm(Phase_GLM.tbl, Amp_GLM.model.(amp_models{iMod}).modelspec,'link','logit','Distribution','binomial');
-%
-%                     % compare models, if better flag as phase x amp
-%                     if model_w_amp.ModelCriterion.AIC <  model_out.(models{iMod}).ModelCriterion.AIC
-%                         All_GLM_cells(iC, iMod-1) = 2;
-%
-%                     end % end compare
-%                 end % end phase x amp
-
-
-
-
-%% summary of all modulated cells
-figure(111)
-imagesc(All_GLM_cells)
-set(gca, 'xticklabels', {'D', 'Th', 'B', 'lG', 'mG', 'hG'})
-ylabel('cell number')
-
-
-
-%%
-
-
-%                    % run the GLM
-%                    for iF = 1:length(f_list)
-%                        if strcmp(f_list{iF}, 'ExpKeys') || strcmp(f_list{iF}, 'hdr')
-%                            continue
-%                        else
-%
-%                            % check for model vs intercept
-%                                    Phase_GLM.glm = fitglm(Phase_GLM.tbl,'Response~1+Condition+(1|SubjectID)+(1|SessID)');
-%                                 b = glmfit(x,y,'binomial','link','logit')
-%
-%
-%                        end % check for expkeys field
-%
-%
-%
-%                    end % end freq loop
-%
-
-
-%% Statistical model
-
-% Loop cells
-
-
-
-
-% loop frequencys
-
-
-% check baseline model with just an intercept
-
-
-% glm(response ~ phase at freq)
-
-% if sig, then compare to interaction with amplitude at that
-% frequency
-
-
-
-
-%%
-
-%                     GLM_depth = [GLM_depth, this_depth];
-%                     GLM_subject = [GLM_subject, this_subject];
-%                     GLM_response = [GLM_response, this_response];
-%
-%                     GLM_phase_delta = [GLM_phase_delta, this_phase.f_3_5];
-%                     GLM_phase_theta = [GLM_phase_theta, this_phase.f_7_10];
-%                     GLM_phase_beta = [GLM_phase_beta, this_phase.f_15_25];
-%                     GLM_phase_lG = [GLM_phase_lG, this_phase.f_30_40];
-%                     GLM_phase_mG = [GLM_phase_mG, this_phase.f_40_60];
-%                     GLM_phase_hG = [GLM_phase_hG, this_phase.f_60_80];
-%
-%                     GLM_amp_delta = [GLM_amp_delta, this_amp.f_3_5];
-%                     GLM_amp_theta = [GLM_amp_theta, this_amp.f_7_10];
-%                     GLM_amp_beta = [GLM_amp_beta, this_amp.f_15_25];
-%                     GLM_amp_lG = [GLM_amp_lG, this_amp.f_30_40];
-%                     GLM_amp_mG = [GLM_amp_mG, this_amp.f_40_60];
-%                     GLM_amp_hG = [GLM_amp_hG, this_amp.f_60_80];
-
-%%
-
-
-% %% make a table of responsive cells, where they are, subject ID, ....
-% Sub_list = {'M13', 'M14'};
-% summary_table = cell(6,length(Sub_list)+1);
-% summary_table{2,1} = 'n Resp Cells';
-% for iSub = 1:length(Sub_list)
-%     summary_table{1, iSub+1} = Sub_list{iSub};
-%
-% end
-% for iC = 1:length(cell_list)
-%     this_cell = cell_list{iC};
-%     f_list = fieldnames(all_cells.(this_cell));
-%
-%     summary_table(
-%
-%
-%
-%
-% end
-
 
 %% plots
 % figure(1)
