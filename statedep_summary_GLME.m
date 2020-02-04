@@ -378,6 +378,28 @@ title('RMSE relative to baseline model')
 saveas(gcf, [summary_dir 'GLM_MSE.png']);
 saveas_eps('GLME_MSE_color', summary_dir)
 
+
+figure(2101)
+imagesc(-all_mse_relative.mat_sort(:,2:7))
+set(gca,'xtick', 1:6, 'xticklabel', {'3-5Hz' ,'7-10Hz', '15-25Hz','30-40Hz', '40-60Hz','60-80Hz'}, 'XTickLabelRotation', 45)
+set(gca, 'yticklabel', [])
+ylabel('cell number')
+title('Model improvement')
+SetFigure([], gcf)
+saveas(gcf, [summary_dir 'GLM_MSE_phase.png']);
+saveas_eps('GLME_MSE_phase', summary_dir)
+
+figure(2102)
+imagesc(-all_mse_relative.mat_sort(:,8:end-1))
+set(gca,'xtick', 1:6, 'xticklabel', {'3-5Hz' ,'7-10Hz', '15-25Hz','30-40Hz', '40-60Hz','60-80Hz'}, 'XTickLabelRotation', 45)
+set(gca, 'yticklabel', [])
+ylabel('cell number')
+title('Model improvement')
+SetFigure([], gcf)
+saveas(gcf, [summary_dir 'GLM_MSE_amp.png']);
+saveas_eps('GLME_MSE_amp', summary_dir)
+
+
 figure(211)
 imagesc(all_tstat.mat)
 set(gca,'xtick', 1:length(all_tstat_name), 'xticklabel', strrep(all_tstat_name, '_', ' '),'XTickLabelRotation', 45)
