@@ -1,31 +1,41 @@
 function statedep_latency_phase_sandbox
 % restoredefaultpath;
 
-if isunix
-    addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
-    addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
-    
-    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
-    all_lat_dir = '/Volumes/Fenrir/State_dep/all_lat/';
-    
-else
-    %     addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
-    addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
-    %addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
-    %     addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
-    addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
-    %addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
-    all_fig_dir = 'G:\State_data\all_checks\';
-    all_lat_dir = 'G:\State_data\all_lat\';
-    
-    %     %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
-    %     cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
-    %     %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
-    %     cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
-    
-end
+% if isunix
+%     addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
+%     addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
+%     
+%     all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
+%     all_lat_dir = '/Volumes/Fenrir/State_dep/all_lat/';
+%     
+% else
+%     %     addpath(genpath('C:\Users\mvdm\Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%     addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%     %addpath(genpath('D:\My_Documents\GitHub\vandermeerlab\code-matlab\shared'));
+%     %     addpath('C:\Users\mvdm\Documents\GitHub\EC_state\Basic_functions');
+%     addpath(genpath('D:\Users\mvdmlab\My_Documents\GitHub\EC_State'))
+%     %addpath('D:\My_Documents\GitHub\EC_state\Basic_functions');
+%     all_fig_dir = 'G:\State_data\all_checks\';
+%     all_lat_dir = 'G:\State_data\all_lat\';
+%     
+%     %     %cd('D:\data\EC_state\M14_2018-12-01_vStr_light_min');
+%     %     cd('C:\data\state-dep\M14_2018-12-01_vStr_light_min');
+%     %     %cd('D:\data\EC_state\M13-2018-12-05_dStr_2p2_light_min');
+%     %     cd('C:\data\state-dep\M13-2018-12-05_dStr_2p2_light_min');
+%     
+% end
+
+
 
 global PARAMS
+
+all_fig_dir = [PARAMS.inter_dir  'all_checks' filesep];
+all_lat_dir = [PARAMS.inter_dir  'all_lat' filesep];
+
+
+% mkdir(
+
+
 %%
 %expkeys duplicate check
 these_files = dir;

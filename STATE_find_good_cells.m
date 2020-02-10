@@ -21,22 +21,27 @@ end
 
 count = 0;
 for iSess = 1:length(sess_list)
-    if strcmp(sess_list{iSess}(1:3), 'M13') || strcmp(sess_list{iSess}(1:3), 'M14') || strcmp(sess_list{iSess}(1:3), 'M16')
+    if iSess  == 30
         continue
     else
-    cd(sess_list{iSess})
-       
-    LoadExpKeys
-    
-    for iCell = 1:length(ExpKeys.goodCell)
         
-    fprintf('''%s_%s_%s'',...\n', strrep(sess_list{iSess}(1:14),'-','_'),strrep(num2str(ExpKeys.tetrodeDepths),'.','p'),  ExpKeys.goodCell{iCell}(1:end-2))
-    count = count+1; 
-    end
-    
-    cd(data_dir)
-    clear ExpKeys
-    
+        if strcmp(sess_list{iSess}(1:3), 'M13') || strcmp(sess_list{iSess}(1:3), 'M14') %|| strcmp(sess_list{iSess}(1:3), 'M16')
+            continue
+        else
+            cd(sess_list{iSess})
+            
+            LoadExpKeys
+            
+            for iCell = 1:length(ExpKeys.goodCell)
+                
+                fprintf('''%s_%s_%s'',...\n', strrep(sess_list{iSess}(1:14),'-','_'),strrep(num2str(ExpKeys.tetrodeDepths),'.','p'),  ExpKeys.goodCell{iCell}(1:end-2))
+                count = count+1;
+            end
+            
+            cd(data_dir)
+            clear ExpKeys
+            
+        end
     end
 end
     disp(count)
