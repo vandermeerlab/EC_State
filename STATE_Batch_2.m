@@ -20,20 +20,22 @@ end
 to_process = {}; % custom sessions to process
 
 
-for iSess = 22:length(sess_list)
+for iSess = 22:length(sess_list) % skip early sessions
     this_date = sess_list{iSess}(5:14);
     this_sub = sess_list{iSess}(1:3);
     this_str = sess_list{iSess}(16:19);
     this_depth = sess_list{iSess}(21:23);
     cd(sess_list{iSess})
     LoadExpKeys()
-    if sum(ismember(PARAMS.Good_cells, strrep([this_sub '-' this_date '_' this_depth '_' ExpKeys.goodCell{1}(1:end-2)], '-', '_'))) ==1
-
-         fprintf('STATE_Batch_2: Processing session: %s...\n', sess_list{iSess})
-         
-         % RUN DATA preprocessing and spike-phase relationships. 
-         statedep_latency_better; close all
-
+    for iGoodcell = 1:length(ExpKeys.goodCell)
+        if sum(ismember(PARAMS.Good_cells, strrep([this_sub '-' this_date '_' this_depth '_' ExpKeys.goodCell{iGoodcell}(1:end-2)], '-', '_'))) ==1
+            
+            fprintf('STATE_Batch_2: Processing session: %s...\n', sess_list{iSess})
+            
+            % RUN DATA preprocessing and spike-phase relationships.
+            statedep_latency_better; close all
+            
+        end
     end
     clear ExpKeys
     cd(PARAMS.raw_data_dir)

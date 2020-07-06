@@ -19,8 +19,8 @@ if ismac
     
 elseif strcmp(os, 'GLNXA64')
     
-    PARAMS.data_dir = '/media/ecarmichael/Fenrir/State_dep'; % where to find the project data
-    PARAMS.raw_data_dir = '/media/ecarmichael/Fenrir/State_dep/EC_State'; % where to find the raw data
+    PARAMS.data_dir = '/mnt/Data/State_dep'; % where to find the project data
+    PARAMS.raw_data_dir = '/mnt/Data/State_dep/EC_State'; % where to find the raw data
     PARAMS.inter_dir = '/home/ecarmichael/Documents/State_dep/Temp/'; % where to put intermediate files
     PARAMS.stats_dir = '/home/ecarmichael/Documents/State_dep/Stats/'; % where to put the statistical output .txt
     PARAMS.code_base_dir = '/home/ecarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'; % where the codebase repo can be found

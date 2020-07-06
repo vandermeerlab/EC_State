@@ -33,9 +33,6 @@ all_fig_dir = [PARAMS.inter_dir  'all_checks' filesep];
 all_lat_dir = [PARAMS.inter_dir  'all_lat' filesep];
 
 
-% mkdir(
-
-
 %%
 %expkeys duplicate check
 these_files = dir;
@@ -105,6 +102,67 @@ if length(laser_on.t{1}) ~= 1000 && length(laser_on.t{1}) ~= 600 && length(laser
     
 end
 
+
+%% inspect stim artifact
+this_stim_binned = zeros(size(this_csc.tvec));
+idx = nearest_idx3(laser_on.t{1}, this_csc.tvec);
+this_spk_binned(idx) = 1;
+[xc, tvec] = xcorr(this_csc.data, this_spk_binned, 500);
+tvec = tvec ./ Fs;
+
+% get random epochs for comparison
+for iShuf = 100:-1:1
+    idx_shuf = round(STATE_randn_range(length(laser_on.t{1}),1, 1, length(this_csc.tvec)));
+    while sum(idx == idx_shuf) >0
+            idx_shuf = round(STATE_randn_range(length(laser_on.t{1}),1, 1, length(laser_on.t{1})));
+    end
+    this_spk_binned(sort(idx_shuf)) = 1;
+    xc_shuf(iShuf,:) =xcorr(this_csc.data, this_spk_binned, 500);
+end
+% 
+figure;
+hold on
+plot(tvec, xc, 'k', 'LineWidth', 2);
+plot(tvec, mean(xc_shuf), '--','color', [0.9 .9 .9], 'LineWidth', 2);
+plot(tvec, mean(xc_shuf)+2*std(xc_shuf), '--','color', [0.8 .8 .8], 'LineWidth', 2);
+plot(tvec, mean(xc_shuf)-2*std(xc_shuf), '--','color', [0.8 .8 .8], 'LineWidth', 2);
+
+
+% %% STA for artifact detection
+% 
+% w = [-.5 .5]; % time window to compute STA over
+% tvec = w(1):1./Fs:w(2); % time axis for STA
+%  
+%  
+% for iEvt = length(laser_on.t{1}):-1:1 % for each spike...
+%  
+%    sta_t = laser_on.t{1}(iEvt)+w(1);
+%    sta_idx = nearest_idx3(laser_on.t{1}(iEvt),this_csc.tvec); % find index of leading window edge
+%  
+%    toAdd = this_csc.data(sta_idx:sta_idx+length(tvec)-1); % grab LFP snippet for this window
+%    % note this way can be dangerous if there are gaps in the data
+%  
+%    sta(iEvt,:) = toAdd'; % build up matrix of [spikes x samples] to average later
+% end
+% 
+% 
+% for iShuf = 100:-1:1
+%        sta_t = laser_on.t{1}(iEvt)+w(1);
+%    sta_idx = nearest_idx3(STATE_randn_range(1,1,1,length(this_csc.tvec),this_csc.tvec); % find index of leading window edge
+%  
+%    toAdd = this_csc.data(sta_idx:sta_idx+length(tvec)-1); % grab LFP snippet for this window
+%    % note this way can be dangerous if there are gaps in the data
+%  
+%    sta_shuf(iEvt,:) = toAdd'; % build up matrix of [spikes x samples] to average later
+%     
+%     
+% end
+%  
+% figure(101)
+% hold on
+% plot(tvec, mean(sta), '-k')
+
+
 %% load spikes
 cfg = []; cfg.getTTnumbers = 0;
 S = LoadSpikes(cfg);
@@ -113,7 +171,8 @@ S = LoadSpikes(cfg);
 for iC = 1:length(S.label)
     
     %pick this cell
-    this_S = SelectTS([], S, iC);
+    cfg_select.verbose = 0; 
+    this_S = SelectTS(cfg_select, S, iC);
     cell_id = this_S.label{1}(1:end-2);
     cell_id = strrep(cell_id, '_SS', '');
     
@@ -155,6 +214,19 @@ for iC = 1:length(S.label)
                 stim_amp = csc_f.data_amp(stim_phase_idx);
                 
                 
+                % get the stim phase histogram (maybe make this a pie?
+                % shuffle?
+                figure(2); subplot(2, 3, iF);
+                [n_val, bin_x] = hist(stim_phase, 5);
+%                 title(sprintf('stim phase histo (%.1f-%.1f Hz)', f_list{iF}(1), f_list{iF}(2)));
+%                 text(bin_x(1), median(n_val), num2str(circ_rtest(stim_phase),3))
+%                 hist(stim_phase, 5);
+%                 subplot(4, 3, iF+3);
+%                 hist(stim_phase, 36);
+                pie(n_val)
+
+                
+                
 %         cfg_filt = [];
 %         cfg_filt.fpass = f_list{iF};
 %         cfg_filt.fstop = fstop_list{iF};
@@ -177,6 +249,8 @@ for iC = 1:length(S.label)
 %         end
 %         
 %         stim_phase = FindPreStimPhase(cfg_filt, laser_on, this_csc);
+
+
         % convert to histogram of spikes relative to laser onset (based on ccf function by MvdM
         cfg_ccf =[];
         cfg_ccf.smooth = 0; % get raw values
@@ -246,7 +320,7 @@ for iC = 1:length(S.label)
         for iEvt = ExpKeys.goodTrials(cell_idx,1):1 :ExpKeys.goodTrials(cell_idx,2)
             if isnan(all_lat(2,iEvt))
                 continue
-            else
+            else % if there is a spike within the 'pre' window remove that event.
                 if all_lat(2,iEvt) > (xbin_centers(peak_idx)+0.001) || all_lat(2,iEvt) < (xbin_centers(peak_idx)-0.001)
                     n_drops(iPhase, iEvt) = 1;
                     all_lat(2,iEvt) = NaN;
@@ -260,7 +334,7 @@ for iC = 1:length(S.label)
                     all_count(2,iEvt) = length(this_event_spikes.t{1});
                     % baseline correct (take the same window before the
                     % event and subtract that from the post-event
-                    if strcmp(cfg_def.baseline_cor, 'on') || cfg_def.baseline_cor ==1;
+                    if strcmp(cfg_def.baseline_cor, 'on') || cfg_def.baseline_cor ==1
                         
                         this_event_spikes_pre = restrict(this_S, laser_on.t{1}(iEvt)-0.002,laser_on.t{1}(iEvt));
                         all_base_cout(2,iEvt) = length(this_event_spikes.t{1}) - length(this_event_spikes_pre.t{1});
@@ -268,7 +342,7 @@ for iC = 1:length(S.label)
                 end
             end
         end
-        fprintf('\n %.1f events dropped#', sum(n_drops(iPhase,:)))
+        fprintf('\n %.0f# events dropped\n', sum(n_drops(iPhase,:)))
         
         % convert lags from S to ms
         
@@ -318,8 +392,6 @@ for iC = 1:length(S.label)
             % get the means for shuffles
             mean_shuf(iPhase) = nanmean(temp_lat_shuf(this_phase_idx));
             std_shuf(iPhase) = nanstd(temp_lat_shuf(this_phase_idx));
-            
-            
         end
         
         % make phase labels
@@ -356,10 +428,10 @@ for iC = 1:length(S.label)
             %             ylim([0 20])
             xlim(hist_lim*1000)
             xlabel('latency (ms)')
-            
             set(gca, 'fontsize', font_size)
+
             
-            subplot(4, ceil(n_phases/2), [n_phases+2  4*ceil(n_phases/2)])
+            subplot(4, ceil(n_phases/2), [8:9, 11:12])
             hold on
             he = errorbar(iPhase, mean_lat(iPhase), 1.96*std_lat(iPhase), 'o', 'color', c_ord(iPhase,:),'MarkerFaceColor', c_ord(iPhase,:), 'markersize', 10);
             %shuf for this phase bin
@@ -372,6 +444,9 @@ for iC = 1:length(S.label)
             set(gca, 'xtick', 1:n_phases, 'xticklabel', phase_labels)
             %             set(gca, 'xticklabel', '')
         end
+        
+                    % put in the phase of the LFP at stim as a pie chart
+                    subplot(4, ceil(n_phases/2), [7 10])
         
         %         SetFigure([], gcf)
         %         set(gcf, 'position', [435, 50, 949, 697]);
