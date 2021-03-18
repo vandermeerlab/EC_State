@@ -21,6 +21,8 @@ cfg_def.dt = 0.00025;
 cfg_def.excessBounds = 1;
 cfg_def.outputGrid = 0;
 cfg_def.evt_color = [4,172,218]./255;
+cfg_def.linewidth = 2; 
+cfg_def.color = [0.3639    0.5755    0.7484]; 
 cfg_def.binsize = cfg_def.dt; % used for gaussian kernal.  select a small bin size for good time resolution
 cfg_def.waves = [];
 cfg_def.contrast_waves = [];
@@ -106,10 +108,10 @@ if  strcmp(cfg.plot, 'on')
     ylim([1 nT])
     xlim(cfg.window);
     hold on
-    if size(t,2) > 1
-        rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-    else
+    if (size(t,1) > 1) || (size(t,2) > 1)
         rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+    else
+        rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
     end
     %% add in the wave forms
     if ~isempty(cfg.waves)
@@ -138,8 +140,9 @@ if  strcmp(cfg.plot, 'on')
     mean_S_gau = nanmean(outputGau,1);
     % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
     % plot(outputIT(1:end-1),mean_S_gau, 'b',outputIT(1:end-1),mean_S_gau+se_S_gau, 'b:',outputIT(1:end-1),mean_S_gau-se_S_gau, 'b:' )
-    plot(outputIT(1:end-1), mean_S_gau)
-    
+    plot(outputIT(1:end-1), mean_S_gau,'color', cfg.color, 'linewidth', cfg.linewidth)
+        xlim(cfg.window);
+
     idx = nearest_idx3(outputIT(1:end-1), 0);
     idx = nearest_idx3(outputIT(1:end-1), 0);
     
@@ -149,10 +152,10 @@ if  strcmp(cfg.plot, 'on')
     
     if ~(max(mean_S_gau)) ==0
         ylim([0 max(mean_S_gau)])
-        if size(t,2) > 1
-            rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
-        else
+        if (size(t,1) > 1) || (size(t,2) > 1)
             rectangle('position', [0 1 0.001  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
+        else
+            rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.evt_color 0.5], 'edgecolor', [cfg.evt_color 0.5])
         end
     end
     
