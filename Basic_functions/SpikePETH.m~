@@ -81,7 +81,7 @@ for iT = nT:-1:1
         if size(S_gau_sdf,1) >1
             S_gau_sdf = S_gau_sdf';
         end
-        outputGau(:,iT) = S_gau_sdf;
+        outputGau(:,iT) = S_gau_sdf';
         
         
         if cfg.outputGrid
@@ -95,15 +95,6 @@ for iT = nT:-1:1
         
     end
 end
-
-%% get the means
-
-mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
-
-idx = nearest_idx3(0, outputIT(1:end-1)); % get the event time index
-
-pre_stim_means = nanmean(outputGau(1:idx-1,:),1);  % get the mean of the gau smoothed firing rate before the event. 
-post_stim_means = nanmean(outputGau(idx:end,:),1); % % get the mean of the gau smoothed FR after the event. 
 %% check if there are any spikes
 if isempty(outputT)
     disp('No spikes')
@@ -228,6 +219,7 @@ if  strcmp(cfg.plot, 'on')
     
     % mean frequency line
     subplot(2,1,2);
+    mean_S_gau = nanmean(outputGau,2);
 %     outputITG= linspace(cfg.window(1), cfg.window(2), diff(cfg.window)/gauss_window+1);
 
     % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
@@ -235,14 +227,18 @@ if  strcmp(cfg.plot, 'on')
     plot(outputIT(1:end-1), mean_S_gau,'color', cfg.color, 'linewidth', cfg.linewidth)
     xlim(cfg.window);
     
-   
+    idx = nearest_idx3(0, outputIT(1:end-1));
+    
+    pre_stim_means = nanmean(outputGau(:,1:idx-1),2);
+    post_stim_means = nanmean(outputGau(:,idx:end),2);
+    
 
     if ~(max(mean_S_gau)) ==0
         ylim([0 max(mean_S_gau)])
         if (size(t,1) > 1) || (size(t,2) > 1)
-            rectangle('position', [0 0 0.001  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            rectangle('position', [0 1 0.001  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
         else
-            rectangle('position', [0 0 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
         end
     end
     
