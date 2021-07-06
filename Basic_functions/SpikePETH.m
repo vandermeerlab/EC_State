@@ -1,4 +1,4 @@
-function [outputS, outputIT, outputGau,mean_S_gau, pre_stim_means, post_stim_means] = SpikePETH(cfg_in, S,t,varargin)
+function [outputS, outputIT, outputGau,mean_S_gau, pre_stim_means, post_stim_means, pre_stim_std, post_stim_std, z_vals] = SpikePETH(cfg_in, S,t,varargin)
 %% SpikePETH: computes the perievent histogram for spike data "S" at events
 %             "t".  Outputs
 %
@@ -24,6 +24,7 @@ cfg_def.outputGrid = 0;
 cfg_def.evt_color_mat = repmat([0 0 0], length(t),1); 
 cfg_def.rec_color = [4,172,218]./255;
 cfg_def.linewidth = 2;
+cfg_def.markersize = 5; 
 cfg_def.color = [0.3639    0.5755    0.7484];
 cfg_def.binsize = cfg_def.dt; % used for gaussian kernal.  select a small bin size for good time resolution
 cfg_def.waves = [];
@@ -32,6 +33,7 @@ cfg_def.c_ord = linspecer(4);
 cfg_def.gauss_window = 1;
 cfg_def.gauss_sd = 0.02; 
 cfg_def.plot = 'on'; % turn output 'on' or 'off';
+cfg_def.plot_type = 'raw'; % could also be zscore. 
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
 cfg.binsize = cfg.dt; 
@@ -104,6 +106,9 @@ idx = nearest_idx3(0, outputIT(1:end-1)); % get the event time index
 
 pre_stim_means = nanmean(outputGau(1:idx-1,:),1);  % get the mean of the gau smoothed firing rate before the event. 
 post_stim_means = nanmean(outputGau(idx:end,:),1); % % get the mean of the gau smoothed FR after the event. 
+
+pre_stim_std = nanstd(outputGau(1:idx-1,:),[],1);  % get the mean of the gau smoothed firing rate before the event. 
+post_stim_std = nanstd(outputGau(idx:end,:),[],1); % % get the mean of the gau smoothed FR after the event. 
 %% check if there are any spikes
 if isempty(outputT)
     disp('No spikes')
@@ -190,7 +195,7 @@ if  strcmp(cfg.plot, 'on')
         if isempty(this_idx)
             continue
         end
-        plot(outputS(this_idx), outputT(this_idx)+0.5,'.', 'color', cfg.evt_color_mat(u_val(iV),:), 'MarkerSize', 5)
+        plot(outputS(this_idx), outputT(this_idx)+0.5,'.', 'color', cfg.evt_color_mat(u_val(iV),:), 'MarkerSize', cfg.markersize)
     end
     
 %     plot(outputS, outputT+0.5, '.k', 'MarkerSize', 5);
@@ -232,19 +237,39 @@ if  strcmp(cfg.plot, 'on')
 
     % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
     % plot(outputIT(1:end-1),mean_S_gau, 'b',outputIT(1:end-1),mean_S_gau+se_S_gau, 'b:',outputIT(1:end-1),mean_S_gau-se_S_gau, 'b:' )
-    plot(outputIT(1:end-1), mean_S_gau,'color', cfg.color, 'linewidth', cfg.linewidth)
-    xlim(cfg.window);
     
-   
+    z_vals = (mean_S_gau - mean(mean_S_gau(1:idx)))./mean(mean_S_gau(1:idx));
 
-    if ~(max(mean_S_gau)) ==0
-        ylim([0 max(mean_S_gau)])
-        if (size(t,1) > 1) || (size(t,2) > 1)
-            rectangle('position', [0 0 0.001  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
-        else
-            rectangle('position', [0 0 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+    if strcmp(cfg.plot_type, 'zscore')
+        plot(outputIT(1:end-1), z_vals,'color', 'k', 'linewidth', cfg.linewidth)
+        ylabel('Pre-event zscore')
+        ylim([min(z_vals) max(z_vals)]);
+        
+        if ~(max(mean_S_gau)) ==0
+            if (size(t,1) > 1) || (size(t,2) > 1)
+                rectangle('position', [0 min(z_vals) 0.001  (max(z_vals) - min(z_vals))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            else
+                rectangle('position', [0 min(z_vals) abs(mode(t(:,2)-t(:,1)))  (max(z_vals) - min(z_vals))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            end
+        end
+        
+    else
+        plot(outputIT(1:end-1), mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
+        xlim(cfg.window);
+        ylabel('firing rate (Hz)')
+        
+        if ~(max(mean_S_gau)) ==0
+            ylim([0 max(mean_S_gau)])
+            if (size(t,1) > 1) || (size(t,2) > 1)
+                rectangle('position', [0 0 0.001  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            else
+                rectangle('position', [0 0 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+            end
         end
     end
+   
+
+
     
         % add in pre and post event means
     x_lims = xlim; 
