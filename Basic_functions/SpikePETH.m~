@@ -208,7 +208,7 @@ if  strcmp(cfg.plot, 'on')
     end
     xlim(cfg.window);
     hold on
-    if (size(t,2) > 1) || (size(t,1) == 1)
+    if (size(t,1) > 1) || (size(t,2) > 1) || (size(t,1) == 1)
         rectangle('position', [0 1 0.001  nT], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
     else
         rectangle('position', [0 1 abs(mode(t(:,2)-t(:,1)))  nT], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
@@ -250,7 +250,7 @@ if  strcmp(cfg.plot, 'on')
         ylim([min(z_vals) max(z_vals)]);
         
         if ~(max(mean_S_gau)) ==0
-            if (size(t,2) > 1) || (size(t,1) == 1)
+            if (size(t,1) > 1) || (size(t,2) > 1)
                 rectangle('position', [0 min(z_vals) 0.001  (max(z_vals) - min(z_vals))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
             else
                 rectangle('position', [0 min(z_vals) abs(mode(t(:,2)-t(:,1)))  (max(z_vals) - min(z_vals))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
@@ -264,7 +264,7 @@ if  strcmp(cfg.plot, 'on')
         
         if ~(max(mean_S_gau)) ==0
             ylim([0 max(mean_S_gau)])
-            if (size(t,2) > 1) || (size(t,1) == 1)
+            if (size(t,1) > 1) || (size(t,2) > 1)
                 rectangle('position', [0 0 0.001  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
             else
                 rectangle('position', [0 0 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
