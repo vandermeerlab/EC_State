@@ -34,6 +34,8 @@ cfg_def.gauss_window = 1;
 cfg_def.gauss_sd = 0.02; 
 cfg_def.plot = 'on'; % turn output 'on' or 'off';
 cfg_def.plot_type = 'raw'; % could also be zscore. 
+cfg_def.z_mean = [];
+cfg_def.z_std = [];
 cfg = ProcessConfig2(cfg_def, cfg_in);
 
 cfg.binsize = cfg.dt; 
@@ -100,7 +102,13 @@ end
 
 %% get the means
 
-mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
+if isempty(cfg.z_mean)
+    mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
+    
+else
+    mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
+    mean_S_gau = (mean_S_gau - cfg.z_mean)./cfg.z_std;
+end
 
 idx = nearest_idx3(0, outputIT(1:end-1)); % get the event time index
 
@@ -260,14 +268,18 @@ if  strcmp(cfg.plot, 'on')
     else
         plot(outputIT(1:end-1), mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
         xlim(cfg.window);
-        ylabel('firing rate (Hz)')
+        if isempty(cfg.z_mean)
+            ylabel('firing rate (Hz)');
+        else
+            ylabel('zscore firing rate')
+        end
         
         if ~(max(mean_S_gau)) ==0
-            ylim([0 max(mean_S_gau)])
+            ylim([min(mean_S_gau) max(mean_S_gau)])
             if (size(t,2) > 1) || (size(t,1) == 1)
-                rectangle('position', [0 0 0.001  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+                rectangle('position', [0 min(mean_S_gau) 0.001  abs(max(mean_S_gau))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
             else
-                rectangle('position', [0 0 abs(mode(t(:,2)-t(:,1)))  max(mean_S_gau)*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
+                rectangle('position', [0 min(mean_S_gau) abs(mode(t(:,2)-t(:,1)))  abs(max(mean_S_gau))*10], 'facecolor', [cfg.rec_color 0.5], 'edgecolor', [cfg.rec_color 0.5])
             end
         end
     end
@@ -279,8 +291,10 @@ if  strcmp(cfg.plot, 'on')
     x_lims = xlim; 
     y_lims = ylim; 
     
-    text(x_lims(1), y_lims(2)*.9, ['Pre mean: ' num2str(mean(mean_S_gau(1:idx-1)), 2) '+/-' num2str(std(mean_S_gau(1:idx-1)),2) 'Hz'], 'fontweight', 'bold', 'fontsize', 12, 'color',c_ord(1,:) )
-    text(x_lims(1), y_lims(2)*.7, ['Post mean: ' num2str(mean(mean_S_gau(idx:end)), 2)  '+/-' num2str(std(mean_S_gau(idx:end)),2) 'Hz' ], 'fontweight', 'bold', 'fontsize', 12, 'color',c_ord(2,:))
+    mean_gau =nanmean(outputGau,2);
+    
+    text(x_lims(1), y_lims(2)*.9, ['Pre mean: ' num2str(mean(mean_gau(1:idx-1)), 2) '+/-' num2str(std(mean_gau(1:idx-1)),2) 'Hz'], 'fontweight', 'bold', 'fontsize', 12, 'color',c_ord(1,:) )
+    text(x_lims(1), y_lims(2)*.7, ['Post mean: ' num2str(mean(mean_gau(idx:end)), 2)  '+/-' num2str(std(mean_gau(idx:end)),2) 'Hz' ], 'fontweight', 'bold', 'fontsize', 12, 'color',c_ord(2,:))
     
 end
 
