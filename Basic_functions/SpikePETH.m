@@ -245,6 +245,7 @@ if  strcmp(cfg.plot, 'on')
     
     % mean frequency line
     subplot(2,1,2);
+    yyaxis left
 %     outputITG= linspace(cfg.window(1), cfg.window(2), diff(cfg.window)/gauss_window+1);
 
     % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
