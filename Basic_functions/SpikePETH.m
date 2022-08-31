@@ -117,9 +117,23 @@ post_stim_means = nanmean(outputGau(idx:end,:),1); % % get the mean of the gau s
 
 pre_stim_std = nanstd(outputGau(1:idx-1,:),[],1);  % get the mean of the gau smoothed firing rate before the event. 
 post_stim_std = nanstd(outputGau(idx:end,:),[],1); % % get the mean of the gau smoothed FR after the event. 
+
+z_vals = (mean_S_gau - mean(mean_S_gau(1:idx)))./mean(mean_S_gau(1:idx));
+
+
+outputIT = outputIT(1:end-1); 
+
 %% check if there are any spikes
 if isempty(outputT)
-    disp('No spikes')
+    z_vals = nan(size(outputIT))';
+    outputS = nan(size(outputIT))';
+    outputGau = nan(size(outputIT))';
+    mean_S_gau = nan(size(outputIT))'; 
+    pre_stim_means = nan(size(t)); 
+    post_stim_means = nan(size(t)); 
+    pre_stim_std = nan(size(t)); 
+    post_stim_std =nan(size(t)); 
+    disp('No spikes: filling with NaNs')
     return
 end
 
@@ -251,10 +265,9 @@ if  strcmp(cfg.plot, 'on')
     % se_S_gau = nanstd(outputGau,2)/sqrt(nT+1);
     % plot(outputIT(1:end-1),mean_S_gau, 'b',outputIT(1:end-1),mean_S_gau+se_S_gau, 'b:',outputIT(1:end-1),mean_S_gau-se_S_gau, 'b:' )
     
-    z_vals = (mean_S_gau - mean(mean_S_gau(1:idx)))./mean(mean_S_gau(1:idx));
 
     if strcmp(cfg.plot_type, 'zscore')
-        plot(outputIT(1:end-1), z_vals,'color', 'k', 'linewidth', cfg.linewidth)
+        plot(outputIT, z_vals,'color', 'k', 'linewidth', cfg.linewidth)
         ylabel('Pre-event zscore')
         ylim([min(z_vals) max(z_vals)]);
         
@@ -267,7 +280,7 @@ if  strcmp(cfg.plot, 'on')
         end
         
     else
-        plot(outputIT(1:end-1), mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
+        plot(outputIT, mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
         xlim(cfg.window);
         if isempty(cfg.z_mean)
             ylabel('firing rate (Hz)');
@@ -299,6 +312,5 @@ if  strcmp(cfg.plot, 'on')
     
 end
 
-outputIT = outputIT(1:end-1); 
 
 end
