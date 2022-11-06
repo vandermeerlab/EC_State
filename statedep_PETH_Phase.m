@@ -1,4 +1,4 @@
-function statedep_latency_phase_sandbox
+function statedep_PETH_Phase
 % restoredefaultpath;
 
 if isunix

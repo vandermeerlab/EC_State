@@ -26,7 +26,7 @@ else
     
 end
 
-mkdir(all_lat_dir); mkdir(all_fig_dir);
+mkdir(all_fig_dir);
 
 
 

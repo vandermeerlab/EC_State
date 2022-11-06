@@ -111,11 +111,11 @@ for iC = 1:length(S.label)
     
     %% add the waveform
     if exist([S.label{iC}(1:4) 'AvgWaveforms.csv'], 'file')
-        if verLessThan('matlab', '9.0.1')
+%         if verLessThan('matlab', '9.0.1')
             wave = csvread([S.label{iC}(1:4) 'AvgWaveforms.csv']);
-        else
-            wave = readmatrix([S.label{iC}(1:4) 'AvgWaveforms.csv']);
-        end
+%         else
+%             wave = readmatrix([S.label{iC}(1:4) 'AvgWaveforms.csv']);
+%         end
         if size(wave,1) >iC*4
             this_wave = wave((iC*4)-2:(iC*4)+1,:);
             

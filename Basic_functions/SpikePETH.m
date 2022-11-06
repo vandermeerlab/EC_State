@@ -103,10 +103,10 @@ end
 %% get the means
 
 if isempty(cfg.z_mean)
-    mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
+    mean_S_gau = nanmean(outputGau,1); % get the mean gaussian smoothed firing rate
     
 else
-    mean_S_gau = nanmean(outputGau,2); % get the mean gaussian smoothed firing rate
+    mean_S_gau = nanmean(outputGau,1); % get the mean gaussian smoothed firing rate
     mean_S_gau = (mean_S_gau - cfg.z_mean)./cfg.z_std;
 end
 
@@ -254,7 +254,7 @@ if  strcmp(cfg.plot, 'on')
     z_vals = (mean_S_gau - mean(mean_S_gau(1:idx)))./mean(mean_S_gau(1:idx));
 
     if strcmp(cfg.plot_type, 'zscore')
-        plot(outputIT(1:end-1), z_vals,'color', 'k', 'linewidth', cfg.linewidth)
+        plot(outputIT, z_vals,'color', 'k', 'linewidth', cfg.linewidth)
         ylabel('Pre-event zscore')
         ylim([min(z_vals) max(z_vals)]);
         
@@ -267,7 +267,7 @@ if  strcmp(cfg.plot, 'on')
         end
         
     else
-        plot(outputIT(1:end-1), mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
+        plot(outputIT, mean_S_gau,'color', 'k', 'linewidth', cfg.linewidth)
         xlim(cfg.window);
         if isempty(cfg.z_mean)
             ylabel('firing rate (Hz)');
@@ -299,6 +299,6 @@ if  strcmp(cfg.plot, 'on')
     
 end
 
-outputIT = outputIT(1:end-1); 
+% outputIT = outputIT(1:end-1); 
 
 end
