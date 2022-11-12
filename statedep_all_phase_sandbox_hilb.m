@@ -5,8 +5,8 @@ if isunix
     addpath(genpath('/Users/jericcarmichael/Documents/GitHub/vandermeerlab/code-matlab/shared'));
     addpath('/Users/jericcarmichael/Documents/GitHub/EC_state/Basic_functions');
     
-    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks/';
-    all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf/';
+    all_fig_dir = '/Volumes/Fenrir/State_dep/all_checks_h/';
+    all_ccf_dir = '/Volumes/Fenrir/State_dep/all_ccf_h/';
     
     
 else

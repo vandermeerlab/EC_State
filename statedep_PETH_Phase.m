@@ -85,8 +85,10 @@ for iC = 1:length(S.label)
         continue
     end
     %% get some LFP phases (filtfilt)
-    f_list = {[3 5], [7 10],[15 25], [30 40],[40 60], [60 80]};
-    f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
+    f_list = {[2 5], [6 10],[25 55],[65 100]};
+    f_list_label = {'2 - 5', '6 - 10', '25 - 55', '65-100'};
+%     f_list = {[3 5], [7 10],[15 25], [30 40],[40 60], [60 80]};
+%     f_list_label = {'3 - 5', '7 - 10', '15 - 25', '30 - 40', '40 - 60', '60 - 80'};
 
     
     for iF = 1:length(f_list) % loop across freqs
